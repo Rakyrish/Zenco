@@ -1,0 +1,45 @@
+# Django Core
+Django==5.0.6
+djangorestframework==3.15.2
+djangorestframework-simplejwt==5.3.1
+django-cors-headers==4.4.0
+django-filter==24.3
+django-storages==1.14.4
+django-extensions==3.2.3
+django-ratelimit==4.1.0
+
+# Database
+psycopg2-binary==2.9.9
+
+# Cache & Queue
+redis==5.0.8
+celery==5.4.0
+django-redis==5.4.0
+
+# Image Processing
+Pillow==10.4.0
+
+# Environment
+python-dotenv==1.0.1
+python-decouple==3.8
+
+# Email
+resend==2.3.0
+
+# Security
+django-security==0.17.0
+
+# Production
+gunicorn==22.0.0
+whitenoise==6.7.0
+
+# Search
+django-haystack==3.3.0
+
+# Utilities
+shortuuid==1.0.13
+Markdown==3.6
+
+# Dev/Testing
+pytest-django==4.8.0
+factory-boy==3.3.1

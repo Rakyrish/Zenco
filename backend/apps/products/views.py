@@ -1,0 +1,61 @@
+from rest_framework import viewsets, filters, status
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from rest_framework.permissions import AllowAny
+from django_filters.rest_framework import DjangoFilterBackend
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
+from .models import Category, Product
+from .serializers import CategorySerializer, ProductListSerializer, ProductDetailSerializer
+
+
+class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Category.objects.filter(is_active=True).prefetch_related('products')
+    serializer_class = CategorySerializer
+    permission_classes = [AllowAny]
+    lookup_field = 'slug'
+
+    @method_decorator(cache_page(60 * 15))  # Cache 15 mins
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+
+class ProductViewSet(viewsets.ReadOnlyModelViewSet):
+    permission_classes = [AllowAny]
+    lookup_field = 'slug'
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['category__slug', 'availability', 'is_featured']
+    search_fields = ['name', 'short_description', 'description', 'applications']
+    ordering_fields = ['name', 'created_at', 'sort_order']
+    ordering = ['sort_order', 'name']
+
+    def get_queryset(self):
+        return Product.objects.filter(
+            is_active=True
+        ).select_related('category').order_by('sort_order', 'name')
+
+    def get_serializer_class(self):
+        if self.action == 'retrieve':
+            return ProductDetailSerializer
+        return ProductListSerializer
+
+    @method_decorator(cache_page(60 * 10))
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    @action(detail=False, methods=['get'], url_path='featured')
+    def featured(self, request):
+        """Return featured products."""
+        qs = self.get_queryset().filter(is_featured=True)[:8]
+        serializer = ProductListSerializer(qs, many=True, context={'request': request})
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'], url_path='category/(?P<category_slug>[^/.]+)')
+    def by_category(self, request, category_slug=None):
+        qs = self.get_queryset().filter(category__slug=category_slug)
+        page = self.paginate_queryset(qs)
+        if page is not None:
+            serializer = ProductListSerializer(page, many=True, context={'request': request})
+            return self.get_paginated_response(serializer.data)
+        serializer = ProductListSerializer(qs, many=True, context={'request': request})
+        return Response(serializer.data)
