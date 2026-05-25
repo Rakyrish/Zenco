@@ -12,57 +12,15 @@ export default function BlogListingPage() {
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
 
-  const mockPosts: BlogPost[] = [
-    {
-      id: '1',
-      title: 'Modern Wastewater Treatment: Choosing the Right Flocculants',
-      slug: 'choosing-right-flocculants-wastewater',
-      excerpt: 'Wastewater purification efficiency depends entirely on polymer weight and charge. Learn how to optimize dosage rates.',
-      category: { id: 1, name: 'Water Treatment', slug: 'water-treatment', description: '', color: 'blue' },
-      featured_image: null,
-      tags: ['Water Treatment', 'Chemicals'],
-      reading_time: 5,
-      is_featured: true,
-      published_at: new Date().toISOString(),
-      author_name: 'Dr. Arthur Otieno',
-    },
-    {
-      id: '2',
-      title: 'Safety Guidelines for Storing Volatile Solvents in Industrial Areas',
-      slug: 'safe-storage-volatile-solvents',
-      excerpt: 'Understand flashpoints, vapor suppression, and safety containment measures required by NEMA guidelines.',
-      category: { id: 2, name: 'Safety & Compliance', slug: 'safety-compliance', description: '', color: 'red' },
-      featured_image: null,
-      tags: ['Safety', 'Solvents'],
-      reading_time: 7,
-      is_featured: false,
-      published_at: new Date().toISOString(),
-      author_name: 'Eng. Julius Wekesa',
-    },
-    {
-      id: '3',
-      title: 'The Shift Towards Eco-Friendly Industrial Cleaning Agents',
-      slug: 'eco-friendly-industrial-cleaning-agents',
-      excerpt: 'Why regional manufacturers are choosing biodegradable surfactants to align with corporate ESG goals.',
-      category: { id: 3, name: 'Sustainability', slug: 'sustainability', description: '', color: 'green' },
-      featured_image: null,
-      tags: ['ESG', 'Cleaning'],
-      reading_time: 4,
-      is_featured: false,
-      published_at: new Date().toISOString(),
-      author_name: 'Mary Mutua',
-    },
-  ]
-
   useEffect(() => {
     async function load() {
       setLoading(true)
       try {
         const data = await getBlogPosts()
-        setPosts(data.results.length ? data.results : mockPosts)
+        setPosts(data.results)
       } catch (err) {
-        console.error('Failed to load blog posts, using mock fallback.', err)
-        setPosts(mockPosts)
+        console.error('Failed to load blog posts.', err)
+        setPosts([])
       } finally {
         setLoading(false)
       }

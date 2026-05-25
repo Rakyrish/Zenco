@@ -9,7 +9,9 @@ class Inquiry(models.Model):
     STATUS_CHOICES = [
         ('new', 'New'),
         ('read', 'Read'),
+        ('processing', 'Processing'),
         ('replied', 'Replied'),
+        ('resolved', 'Resolved'),
         ('closed', 'Closed'),
         ('spam', 'Spam'),
     ]

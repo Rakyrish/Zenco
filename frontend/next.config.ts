@@ -1,5 +1,9 @@
 import type { NextConfig } from 'next'
 
+const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'
+const mediaUrl = new URL(apiUrl.replace(/\/api\/?$/, ''))
+const apiOrigin = mediaUrl.origin
+
 const nextConfig: NextConfig = {
   // Strict mode for better DX
   reactStrictMode: true,
@@ -8,14 +12,9 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       {
-        protocol: 'http',
-        hostname: 'localhost',
-        port: '8000',
-        pathname: '/media/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'zencosystems.co.ke',
+        protocol: mediaUrl.protocol.replace(':', '') as 'http' | 'https',
+        hostname: mediaUrl.hostname,
+        port: mediaUrl.port,
         pathname: '/media/**',
       },
     ],
@@ -42,7 +41,7 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
               "img-src 'self' data: blob: https:",
-              "connect-src 'self' https://api.resend.com",
+              `connect-src 'self' ${apiOrigin}`,
               "frame-src https://www.google.com https://maps.google.com",
             ].join('; '),
           },
@@ -63,7 +62,7 @@ const nextConfig: NextConfig = {
       ? [
           {
             source: '/api/:path*',
-            destination: 'http://localhost:8000/api/:path*',
+            destination: `${apiUrl.replace(/\/$/, '')}/:path*`,
           },
         ]
       : []

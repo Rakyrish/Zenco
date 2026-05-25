@@ -24,57 +24,8 @@ export default function ProductDetailPage() {
         const data = await getProductBySlug(slug)
         setProduct(data)
       } catch (err) {
-        console.error('Failed to get product details, using mock fallback.', err)
-        // Fallback Mock Details
-        setProduct({
-          id: '1',
-          name: 'Sodium Hypochlorite 15%',
-          slug: 'sodium-hypochlorite-15',
-          short_description: 'High-grade water chlorination and disinfection chemical agent.',
-          description: 'Sodium Hypochlorite is a clear, slightly yellowish chemical compound with a characteristic odor. It is widely utilized in industrial water sanitization, bleach manufacturing, cooling tower treatments, and wastewater disinfection. Zenco Systems provides this chemical in bulk tanker deliveries and high-quality industrial IBCs to customers across East Africa.',
-          category: {
-            id: 'water-treatment',
-            name: 'Water Treatment',
-            slug: 'water-treatment',
-            description: '',
-            icon: '⚗',
-            image: null,
-            sort_order: 1,
-            seo_title: 'Water Treatment Chemicals',
-            seo_description: '',
-            product_count: 5,
-            is_active: true,
-          },
-          category_name: 'Water Treatment',
-          category_slug: 'water-treatment',
-          image: null,
-          availability: 'in_stock',
-          is_featured: true,
-          regions_available: ['Kenya', 'Uganda', 'Tanzania'],
-          specifications: {
-            'Chemical Formula': 'NaOCl',
-            'Active Chlorine': '15.0% Min',
-            'Appearance': 'Clear yellow liquid',
-            'Specific Gravity': '1.20 - 1.25',
-            'pH': '11.5 - 13.0',
-            'Free Alkali (as NaOH)': '0.5% - 1.5%',
-          },
-          applications: [
-            'Municipal water system disinfection & chlorination.',
-            'Industrial cooling water microbial control.',
-            'Textile bleaching and paper pulp whitening agent.',
-            'Dairies, food processors, and breweries sanitation.',
-            'Wastewater treatment for odor control and cyanide destruction.',
-          ],
-          gallery: [],
-          datasheet: '/media/documents/sodium-hypochlorite-sds.pdf',
-          seo_title: 'Industrial Sodium Hypochlorite 15% | Zenco Systems Ltd',
-          seo_description: 'Buy premium Sodium Hypochlorite 15% in Kenya. Industrial water treatment & sanitizing solution. Bulk supply in Nairobi.',
-          schema_data: {},
-          related_products: [],
-          created_at: '',
-          updated_at: '',
-        })
+        console.error('Failed to get product details.', err)
+        setProduct(null)
       } finally {
         setLoading(false)
       }

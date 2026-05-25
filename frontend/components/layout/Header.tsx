@@ -92,7 +92,8 @@ export default function Header() {
             <nav className="hidden lg:flex items-center gap-1" ref={megaRef}>
               {NAV_LINKS.map(link => (
                 <div key={link.label} className="relative group">
-                  {link.hasMega ? (
+                  {(link as any).hasMega ? (
+
                     <button
                       className={cn(
                         'flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-medium',

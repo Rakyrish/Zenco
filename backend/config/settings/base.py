@@ -39,6 +39,7 @@ LOCAL_APPS = [
     'apps.testimonials',
     'apps.partners',
     'apps.accounts',
+    'apps.operations',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -75,18 +76,21 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
+DB_SCHEMA = config('DB_SCHEMA', default='public')
+
 # ─── Database ─────────────────────────────────────────────────────────────────
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': config('DB_NAME', default='zenco_db'),
-        'USER': config('DB_USER', default='zenco_user'),
-        'PASSWORD': config('DB_PASSWORD', default='password'),
-        'HOST': config('DB_HOST', default='localhost'),
-        'PORT': config('DB_PORT', default='5432'),
+        'NAME': config('DB_NAME'),
+        'USER': config('DB_USER'),
+        'PASSWORD': config('DB_PASSWORD'),
+        'HOST': config('DB_HOST'),
+        'PORT': config('DB_PORT'),
         'CONN_MAX_AGE': 60,
         'OPTIONS': {
             'connect_timeout': 10,
+            'options': f'-c search_path={DB_SCHEMA},public',
         },
     }
 }
@@ -107,6 +111,8 @@ CACHES = {
 }
 
 # ─── Authentication ───────────────────────────────────────────────────────────
+AUTH_USER_MODEL = 'accounts.ZencoUser'
+
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
@@ -197,6 +203,19 @@ RESEND_API_KEY = config('RESEND_API_KEY', default='')
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='noreply@zencosystems.co.ke')
 ADMIN_EMAIL = config('ADMIN_EMAIL', default='admin@zencosystems.co.ke')
 INQUIRY_NOTIFICATION_EMAIL = config('INQUIRY_NOTIFICATION_EMAIL', default='inquiries@zencosystems.co.ke')
+
+# ─── Company / API Runtime Settings ───────────────────────────────────────
+API_BASE_URL = config('API_BASE_URL', default='')
+OPENAI_API_KEY = config('OPENAI_API_KEY', default='')
+OPENAI_MODEL = config('OPENAI_MODEL', default='gpt-4.1-mini')
+COMPANY_NAME = config('COMPANY_NAME', default='Zenco Systems Ltd')
+COMPANY_EMAIL = config('COMPANY_EMAIL', default='info@zenithcoltd.com')
+COMPANY_PHONE_NUMBER = config('COMPANY_PHONE_NUMBER', default='')
+COMPANY_WHATSAPP_NUMBER = config('COMPANY_WHATSAPP_NUMBER', default='')
+GOOGLE_CLIENT_ID = config('GOOGLE_CLIENT_ID', default='')
+GOOGLE_CLIENT_SECRET = config('GOOGLE_CLIENT_SECRET', default='')
+GOOGLE_SHEETS_SPREADSHEET_ID = config('GOOGLE_SHEETS_SPREADSHEET_ID', default='')
+GOOGLE_SERVICE_ACCOUNT_JSON = config('GOOGLE_SERVICE_ACCOUNT_JSON', default='')
 
 # ─── Logging ──────────────────────────────────────────────────────────────────
 LOGGING = {

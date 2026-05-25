@@ -63,8 +63,23 @@ class Product(models.Model):
         help_text='List of additional image URLs')
     datasheet = models.FileField(upload_to='datasheets/', blank=True, null=True,
         help_text='Product technical datasheet PDF')
+    packaging = models.CharField(max_length=255, blank=True)
+    price_per_unit = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    price_currency = models.CharField(max_length=8, default='KES')
+    stock_quantity = models.PositiveIntegerField(default=0)
+    reorder_level = models.PositiveIntegerField(default=0)
+    unit = models.CharField(max_length=50, default='units')
+    sku = models.CharField(max_length=80, blank=True)
+    supplier_name = models.CharField(max_length=180, blank=True)
+    cost_per_unit = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    last_restocked = models.DateTimeField(null=True, blank=True)
     availability = models.CharField(
         max_length=20, choices=AVAILABILITY_CHOICES, default='in_stock'
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=[('published', 'Published'), ('draft', 'Draft'), ('archived', 'Archived')],
+        default='published',
     )
     is_featured = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
@@ -117,3 +132,7 @@ class Product(models.Model):
         return Product.objects.filter(
             category=self.category, is_active=True
         ).exclude(pk=self.pk)[:4]
+
+    @property
+    def is_low_stock(self):
+        return self.stock_quantity <= self.reorder_level

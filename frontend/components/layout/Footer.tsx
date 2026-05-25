@@ -1,8 +1,9 @@
 'use client'
 
 import Link from 'next/link'
-import { Phone, Mail, MapPin, Linkedin, Facebook, Twitter, ArrowRight, ChevronRight } from 'lucide-react'
+import { Phone, Mail, MapPin, Linkedin, Facebook, Instagram, ArrowRight, ChevronRight } from 'lucide-react'
 import { SITE_CONFIG, PRODUCT_CATEGORIES } from '@/lib/constants'
+import { FaTiktok } from "react-icons/fa";
 import Logo from '@/components/shared/Logo'
 
 export default function Footer() {
@@ -110,15 +111,26 @@ export default function Footer() {
                   <Facebook size={16} />
                 </a>
               )}
-              {SITE_CONFIG.social.twitter && (
+              {SITE_CONFIG.social.tiktok && (
                 <a
-                  href={SITE_CONFIG.social.twitter}
+                  href={SITE_CONFIG.social.tiktok}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-9 h-9 rounded-lg bg-white/8 flex items-center justify-center hover:bg-accent hover:text-white transition-all"
-                  aria-label="Twitter / X"
+                  aria-label="TikTok"
                 >
-                  <Twitter size={16} />
+                  <FaTiktok size={16} />
+                </a>
+              )}
+              {SITE_CONFIG.social.instagram && (
+                <a
+                  href={SITE_CONFIG.social.instagram}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-9 h-9 rounded-lg bg-white/8 flex items-center justify-center hover:bg-accent hover:text-white transition-all"
+                  aria-label="Instagram"
+                >
+                  <Instagram size={16} />
                 </a>
               )}
             </div>
@@ -180,22 +192,7 @@ export default function Footer() {
 
           {/* Certifications */}
           <div>
-            <h3 className="text-white font-bold text-sm uppercase tracking-widest mb-5">
-              Certifications
-            </h3>
-            <div className="space-y-3">
-              {['ISO 9001:2015', 'KEBS Approved', 'NEMA Certified', 'PPB Registered'].map(cert => (
-                <div
-                  key={cert}
-                  className="flex items-center gap-2 text-sm bg-white/5 border border-white/10 rounded-lg px-3 py-2"
-                >
-                  <div className="w-2 h-2 rounded-full bg-accent flex-shrink-0" />
-                  {cert}
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-6 bg-accent/10 border border-accent/20 rounded-xl p-4">
+            <div className=" bg-accent/10 border border-accent/20 rounded-xl p-4">
               <p className="text-white font-semibold text-sm mb-1">Need Help?</p>
               <p className="text-white/60 text-xs mb-3">
                 Our team is ready to assist you with any chemical requirements.
@@ -207,9 +204,13 @@ export default function Footer() {
                 Contact Us <ArrowRight size={12} />
               </Link>
             </div>
+
           </div>
+
+
         </div>
       </div>
+
 
       {/* Bottom Bar */}
       <div className="border-t border-white/10">
@@ -217,17 +218,7 @@ export default function Footer() {
           <p className="text-xs text-white/40">
             © {year} Zenco Systems Ltd – Chemical Division. All rights reserved.
           </p>
-          <div className="flex items-center gap-4 text-xs text-white/40">
-            <Link href="/privacy-policy" className="hover:text-accent transition-colors">
-              Privacy Policy
-            </Link>
-            <Link href="/terms-of-service" className="hover:text-accent transition-colors">
-              Terms of Service
-            </Link>
-            <Link href="/sitemap.xml" className="hover:text-accent transition-colors">
-              Sitemap
-            </Link>
-          </div>
+
         </div>
       </div>
     </footer>

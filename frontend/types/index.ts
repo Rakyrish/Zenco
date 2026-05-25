@@ -28,7 +28,7 @@ export interface ProductListItem {
   regions_available: string[]
 }
 
-export interface ProductDetail extends ProductListItem {
+export interface ProductDetail extends Omit<ProductListItem, 'category'> {
   description: string
   category: Category
   specifications: Record<string, string>

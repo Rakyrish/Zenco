@@ -57,10 +57,7 @@ function ContactContent() {
       await submitInquiry(data)
       setSubmitted(true)
     } catch (err) {
-      console.warn('API submit failed, using mock local success fallback.', err)
-      // Form submits are business critical. If API is down or not fully setup,
-      // show success page to simulate production-grade resilience.
-      setSubmitted(true)
+      setError(err instanceof Error ? err.message : 'Could not submit your inquiry. Please try again.')
     } finally {
       setSubmitting(false)
     }

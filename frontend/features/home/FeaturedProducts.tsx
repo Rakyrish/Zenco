@@ -17,62 +17,8 @@ export default function FeaturedProducts() {
         const data = await getFeaturedProducts()
         setProducts(data.slice(0, 4))
       } catch (err) {
-        console.error('Failed to load featured products, using mock fallback.', err)
-        // Fallback mock data
-        setProducts([
-          {
-            id: '1',
-            name: 'Sodium Hypochlorite 15%',
-            slug: 'sodium-hypochlorite-15',
-            short_description: 'High-grade water chlorination and disinfection chemical agent.',
-            category: 'water-treatment',
-            category_name: 'Water Treatment',
-            category_slug: 'water-treatment',
-            image: null,
-            availability: 'in_stock',
-            is_featured: true,
-            regions_available: ['Kenya', 'Uganda', 'Tanzania'],
-          },
-          {
-            id: '2',
-            name: 'Industrial Ethyl Acetate',
-            slug: 'ethyl-acetate',
-            short_description: 'Premium organic solvent for paint, coating, and cosmetic formulations.',
-            category: 'solvents-thinners',
-            category_name: 'Solvents & Thinners',
-            category_slug: 'solvents-thinners',
-            image: null,
-            availability: 'in_stock',
-            is_featured: true,
-            regions_available: ['Kenya', 'Rwanda'],
-          },
-          {
-            id: '3',
-            name: 'Hydrochloric Acid 33%',
-            slug: 'hydrochloric-acid-33',
-            short_description: 'Strong mineral acid widely used for metal pickling, pH adjustment and water treatment.',
-            category: 'water-treatment',
-            category_name: 'Water Treatment',
-            category_slug: 'water-treatment',
-            image: null,
-            availability: 'limited',
-            is_featured: true,
-            regions_available: ['Kenya', 'Uganda'],
-          },
-          {
-            id: '4',
-            name: 'Isopropyl Alcohol (IPA) 99.9%',
-            slug: 'isopropyl-alcohol-99',
-            short_description: 'High-purity solvent and sanitizer component for cosmetics and pharmaceuticals.',
-            category: 'pharmaceuticals-cosmetics',
-            category_name: 'Pharma & Cosmetics',
-            category_slug: 'pharmaceuticals-cosmetics',
-            image: null,
-            availability: 'in_stock',
-            is_featured: true,
-            regions_available: ['Kenya', 'Tanzania', 'Rwanda', 'Uganda'],
-          },
-        ])
+        console.error('Failed to load featured products.', err)
+        setProducts([])
       } finally {
         setLoading(false)
       }

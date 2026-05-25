@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { Search, Eye, ShoppingBag, SlidersHorizontal, Layers, CheckCircle } from 'lucide-react'
 import { getProducts, getCategories } from '@/lib/api'
 import type { ProductListItem, Category } from '@/types'
-import { AVAILABILITY_LABELS, PRODUCT_CATEGORIES } from '@/lib/constants'
+import { AVAILABILITY_LABELS } from '@/lib/constants'
 
 function ProductsContent() {
   const router = useRouter()
@@ -21,112 +21,16 @@ function ProductsContent() {
   const [selectedCat, setSelectedCat] = useState(initialCategory)
   const [loading, setLoading] = useState(true)
 
-  // MOCK Fallbacks in case DRF is offline
-  const mockCategories: Category[] = PRODUCT_CATEGORIES.map((c, idx) => ({
-    id: String(idx + 1),
-    name: c.name,
-    slug: c.slug,
-    description: `Industrial ${c.name.toLowerCase()} supplies.`,
-    icon: '⚗',
-    image: null,
-    sort_order: idx + 1,
-    seo_title: c.name,
-    seo_description: `Zenco Systems ${c.name} supplies.`,
-    product_count: 5,
-    is_active: true,
-  }))
-
-  const mockProducts: ProductListItem[] = [
-    {
-      id: '1',
-      name: 'Sodium Hypochlorite 15%',
-      slug: 'sodium-hypochlorite-15',
-      short_description: 'High-grade water chlorination and disinfection chemical agent.',
-      category: 'water-treatment',
-      category_name: 'Water Treatment',
-      category_slug: 'water-treatment',
-      image: null,
-      availability: 'in_stock',
-      is_featured: true,
-      regions_available: ['Kenya', 'Uganda', 'Tanzania'],
-    },
-    {
-      id: '2',
-      name: 'Industrial Ethyl Acetate',
-      slug: 'ethyl-acetate',
-      short_description: 'Premium organic solvent for paint, coating, and cosmetic formulations.',
-      category: 'solvents-thinners',
-      category_name: 'Solvents & Thinners',
-      category_slug: 'solvents-thinners',
-      image: null,
-      availability: 'in_stock',
-      is_featured: true,
-      regions_available: ['Kenya', 'Rwanda'],
-    },
-    {
-      id: '3',
-      name: 'Hydrochloric Acid 33%',
-      slug: 'hydrochloric-acid-33',
-      short_description: 'Strong mineral acid widely used for metal pickling, pH adjustment and water treatment.',
-      category: 'water-treatment',
-      category_name: 'Water Treatment',
-      category_slug: 'water-treatment',
-      image: null,
-      availability: 'limited',
-      is_featured: true,
-      regions_available: ['Kenya', 'Uganda'],
-    },
-    {
-      id: '4',
-      name: 'Isopropyl Alcohol (IPA) 99.9%',
-      slug: 'isopropyl-alcohol-99',
-      short_description: 'High-purity solvent and sanitizer component for cosmetics and pharmaceuticals.',
-      category: 'pharmaceuticals-cosmetics',
-      category_name: 'Pharma & Cosmetics',
-      category_slug: 'pharmaceuticals-cosmetics',
-      image: null,
-      availability: 'in_stock',
-      is_featured: true,
-      regions_available: ['Kenya', 'Tanzania', 'Rwanda', 'Uganda'],
-    },
-    {
-      id: '5',
-      name: 'Liquid Chlorine',
-      slug: 'liquid-chlorine',
-      short_description: 'Bulk liquid chlorine for municipal water systems and large industrial cooling towers.',
-      category: 'water-treatment',
-      category_name: 'Water Treatment',
-      category_slug: 'water-treatment',
-      image: null,
-      availability: 'on_order',
-      is_featured: false,
-      regions_available: ['Kenya'],
-    },
-    {
-      id: '6',
-      name: 'Toluene Industrial Grade',
-      slug: 'toluene',
-      short_description: 'Standard solvent for chemical syntheses and paint formulations.',
-      category: 'solvents-thinners',
-      category_name: 'Solvents & Thinners',
-      category_slug: 'solvents-thinners',
-      image: null,
-      availability: 'in_stock',
-      is_featured: false,
-      regions_available: ['Kenya', 'Tanzania'],
-    },
-  ]
-
   useEffect(() => {
     async function loadData() {
       setLoading(true)
       try {
         const [catData, prodData] = await Promise.all([
-          getCategories().catch(() => mockCategories),
+          getCategories(),
           getProducts({
             category: selectedCat === 'all' ? undefined : selectedCat,
             search: search || undefined,
-          }).catch(() => ({ results: mockProducts })),
+          }),
         ])
         setCategories(catData)
         
@@ -145,6 +49,8 @@ function ProductsContent() {
         setProducts(filtered)
       } catch (err) {
         console.error('Failed to load products page data', err)
+        setCategories([])
+        setProducts([])
       } finally {
         setLoading(false)
       }

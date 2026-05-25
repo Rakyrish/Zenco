@@ -101,6 +101,8 @@ def _build_admin_notification_html(inquiry) -> str:
 
 
 def _build_autoreply_html(inquiry) -> str:
+    site_url = getattr(settings, 'API_BASE_URL', '').replace('/api', '') or ''
+    products_url = f"{site_url}/products" if site_url else "/products"
     return f"""
 <!DOCTYPE html>
 <html>
@@ -117,9 +119,9 @@ def _build_autoreply_html(inquiry) -> str:
       <p style="margin: 0; font-size: 14px; color: #666;"><strong>Your inquiry reference:</strong> #{str(inquiry.id)[:8].upper()}</p>
       <p style="margin: 8px 0 0; font-size: 14px; color: #666;"><strong>Type:</strong> {inquiry.get_inquiry_type_display()}</p>
     </div>
-    <p>While you wait, you can explore our full product catalog at <a href="https://zencosystems.co.ke/products" style="color: #F26C0C;">zencosystems.co.ke/products</a> or call us directly for urgent inquiries.</p>
+    <p>While you wait, you can explore our full product catalog at <a href="{products_url}" style="color: #F26C0C;">{products_url}</a> or call us directly for urgent inquiries.</p>
     <p style="margin-top: 24px;">Warm regards,<br><strong>The Zenco Systems Team</strong><br>
-    <span style="font-size: 13px; color: #666;">📞 +254 700 000 000 &nbsp;|&nbsp; 📧 info@zencosystems.co.ke</span></p>
+    <span style="font-size: 13px; color: #666;">{settings.COMPANY_PHONE_NUMBER} &nbsp;|&nbsp; {settings.COMPANY_EMAIL}</span></p>
   </div>
   <div style="background: #0C094D; padding: 16px; border-radius: 0 0 8px 8px; text-align: center;">
     <p style="color: #aaa; font-size: 12px; margin: 0;">

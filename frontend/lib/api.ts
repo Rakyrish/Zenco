@@ -172,3 +172,15 @@ export async function submitInquiry(data: InquiryFormData): Promise<{ message: s
     body: JSON.stringify(data),
   }, 'no-store')
 }
+
+export async function trackWhatsAppClick(data: {
+  page_url?: string
+  source?: string
+  message?: string
+  product_slug?: string
+}): Promise<{ message: string }> {
+  return fetchAPI<{ message: string }>('/analytics/whatsapp-click/', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }, 'no-store')
+}

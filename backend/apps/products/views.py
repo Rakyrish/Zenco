@@ -1,12 +1,15 @@
 from rest_framework import viewsets, filters, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAdminUser
 from django_filters.rest_framework import DjangoFilterBackend
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 from .models import Category, Product
-from .serializers import CategorySerializer, ProductListSerializer, ProductDetailSerializer
+from .serializers import (
+    CategorySerializer, ProductListSerializer, ProductDetailSerializer,
+    ProductAdminSerializer,
+)
 
 
 class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
@@ -49,6 +52,39 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
         qs = self.get_queryset().filter(is_featured=True)[:8]
         serializer = ProductListSerializer(qs, many=True, context={'request': request})
         return Response(serializer.data)
+
+    @action(detail=False, methods=['get'], url_path='search')
+    def search(self, request):
+        query = request.query_params.get('q') or request.query_params.get('search') or ''
+        qs = self.filter_queryset(self.get_queryset())
+        if query:
+            qs = qs.filter(name__icontains=query) | qs.filter(short_description__icontains=query)
+        page = self.paginate_queryset(qs.distinct())
+        if page is not None:
+            serializer = ProductListSerializer(page, many=True, context={'request': request})
+            return self.get_paginated_response(serializer.data)
+        serializer = ProductListSerializer(qs.distinct(), many=True, context={'request': request})
+        return Response(serializer.data)
+
+
+class ProductAdminViewSet(viewsets.ModelViewSet):
+    queryset = Product.objects.select_related('category').order_by('-updated_at')
+    serializer_class = ProductAdminSerializer
+    permission_classes = [IsAdminUser]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['category__slug', 'status', 'availability', 'is_featured']
+    search_fields = ['name', 'short_description', 'description', 'sku']
+    ordering_fields = ['name', 'created_at', 'updated_at', 'stock_quantity']
+
+    @action(detail=True, methods=['post'], url_path='upload-image')
+    def upload_image(self, request, pk=None):
+        product = self.get_object()
+        image = request.FILES.get('image')
+        if not image:
+            return Response({'message': 'No image uploaded.'}, status=status.HTTP_400_BAD_REQUEST)
+        product.image = image
+        product.save(update_fields=['image', 'updated_at'])
+        return Response({'image': request.build_absolute_uri(product.image.url)})
 
     @action(detail=False, methods=['get'], url_path='category/(?P<category_slug>[^/.]+)')
     def by_category(self, request, category_slug=None):
