@@ -75,7 +75,7 @@ export interface AdminProduct {
   slug: string
   short_description: string
   description: string
-  category: string
+  category: string | null
   category_name: string
   category_slug: string
   image: string | null
@@ -93,6 +93,7 @@ export interface AdminProduct {
   regions_available: string[]
   seo_title: string
   seo_description: string
+  schema_data?: Record<string, unknown>
   datasheet?: string | null
   created_at: string
   updated_at: string
@@ -103,7 +104,7 @@ export interface ProductFormData {
   slug: string
   short_description: string
   description: string
-  category: string
+  category: string | null
   packaging: string
   price_per_unit?: number | null
   availability: AvailabilityStatus
@@ -116,6 +117,7 @@ export interface ProductFormData {
   regions_available: string[]
   seo_title: string
   seo_description: string
+  schema_data?: Record<string, unknown>
 }
 
 // ── Blog ──────────────────────────────────────────────────────────────────
@@ -244,6 +246,10 @@ export interface ChatbotConversation {
   first_message: string
   last_message_at: string
   created_at: string
+  // Lead / escalation tracking (new fields)
+  lead_intent: boolean
+  product_interest: string
+  escalated_to_whatsapp: boolean
 }
 
 // ── Inventory ─────────────────────────────────────────────────────────────

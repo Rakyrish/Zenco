@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, Package, FileText, MessageSquare, ShoppingCart,
   Bot, BarChart3, Warehouse, Search, Settings, Users, ChevronLeft,
-  ChevronRight, FlaskConical, X, Zap,
+  ChevronRight, X, Zap,
 } from 'lucide-react'
 
 interface NavGroup {
@@ -97,13 +98,13 @@ export default function AdminSidebar({ mobileOpen, onMobileClose }: AdminSidebar
       >
         {/* Logo */}
         <div className={`flex items-center gap-3 px-4 py-5 border-b border-white/10 flex-shrink-0 ${collapsed ? 'justify-center' : ''}`}>
-          <div className="w-9 h-9 rounded-xl bg-[#F26C0C] flex items-center justify-center flex-shrink-0">
-            <FlaskConical size={18} className="text-white" />
+          <div className="relative h-11 w-11 flex-shrink-0 overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-white/20">
+            <Image src="/zencologo.jpeg" alt="Zenco Chemicals Ltd logo" fill sizes="44px" className="object-contain p-1" priority />
           </div>
           {!collapsed && (
             <div className="min-w-0">
-              <p className="text-white font-bold text-sm leading-tight truncate">Zenco Systems</p>
-              <p className="text-white/40 text-[10px] font-semibold uppercase tracking-widest">Admin Panel</p>
+              <p className="text-white font-bold text-sm leading-tight truncate">Zenco Chemicals Ltd</p>
+              <p className="text-white/40 text-[10px] font-semibold uppercase tracking-widest">Admin Dashboard</p>
             </div>
           )}
           {/* Mobile close */}

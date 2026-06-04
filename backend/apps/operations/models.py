@@ -1,4 +1,5 @@
 import uuid
+from django.utils import timezone
 from django.db import models
 
 
@@ -8,6 +9,15 @@ class ChatConversation(models.Model):
     user_identifier = models.CharField(max_length=255, blank=True)
     is_resolved = models.BooleanField(default=False)
     source_page = models.CharField(max_length=500, blank=True)
+
+    # Lead / escalation tracking
+    lead_intent = models.BooleanField(default=False,
+        help_text='True when visitor expressed quote/price/order intent')
+    product_interest = models.CharField(max_length=255, blank=True,
+        help_text='Most recently mentioned product keyword')
+    escalated_to_whatsapp = models.BooleanField(default=False,
+        help_text='True when a WhatsApp escalation CTA was sent')
+
     created_at = models.DateTimeField(auto_now_add=True)
     last_message_at = models.DateTimeField(auto_now=True)
 
@@ -119,3 +129,25 @@ class GoogleSheetSyncState(models.Model):
 
     class Meta:
         ordering = ['resource', 'sheet_name']
+
+
+class KnowledgeCache(models.Model):
+    """
+    Stores scraped website content for use as RAG context in the AI chatbot.
+    Content is refreshed periodically via the `ingest_website` management command.
+    """
+    url = models.CharField(max_length=500, unique=True,
+        help_text='Source URL that was scraped')
+    page_label = models.CharField(max_length=120,
+        help_text='Human-readable label, e.g. "Homepage", "Products"')
+    content = models.TextField(help_text='Extracted plain-text content from the page')
+    scraped_at = models.DateTimeField(default=timezone.now)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['page_label']
+        verbose_name = 'Knowledge Cache Entry'
+        verbose_name_plural = 'Knowledge Cache'
+
+    def __str__(self):
+        return f'{self.page_label} ({self.url})'

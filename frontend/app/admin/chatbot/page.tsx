@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Bot, Search, Calendar, MessageSquare, AlertCircle, CheckCircle2, ChevronRight, User, Cpu, Download, ArrowLeft } from 'lucide-react'
+import { Bot, Search, Calendar, MessageSquare, AlertCircle, CheckCircle2, ChevronRight, User, Cpu, Download, ArrowLeft, Flame, Phone } from 'lucide-react'
 import StatusBadge from '@/components/admin/ui/StatusBadge'
 import Pagination from '@/components/admin/ui/Pagination'
 import { useDebounce, useToast } from '@/lib/admin/hooks'
@@ -78,6 +78,8 @@ export default function AdminChatbotPage() {
   const unresolvedChats = conversations.filter(c => !c.is_resolved).length
   const resolvedChats = conversations.filter(c => c.is_resolved).length
   const resolutionRate = totalChats ? Math.round((resolvedChats / totalChats) * 100) : 0
+  const escalatedChats = conversations.filter(c => c.escalated_to_whatsapp).length
+  const leadChats = conversations.filter(c => c.lead_intent).length
 
   return (
     <div className="space-y-6 max-w-[1600px]">
@@ -100,7 +102,7 @@ export default function AdminChatbotPage() {
       </div>
 
       {/* Quick Analytics Panels */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-5 shadow-sm flex items-center gap-4">
           <div className="w-10 h-10 rounded-xl bg-orange-50 dark:bg-orange-950/20 text-[#F26C0C] flex items-center justify-center flex-shrink-0">
             <MessageSquare size={20} />
@@ -116,7 +118,7 @@ export default function AdminChatbotPage() {
           </div>
           <div>
             <p className="text-xl font-extrabold text-gray-900 dark:text-white tabular-nums">{unresolvedChats}</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Unresolved Conversations</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Unresolved</p>
           </div>
         </div>
         <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-5 shadow-sm flex items-center gap-4">
@@ -126,6 +128,15 @@ export default function AdminChatbotPage() {
           <div>
             <p className="text-xl font-extrabold text-gray-900 dark:text-white tabular-nums">{resolutionRate}%</p>
             <p className="text-xs text-gray-500 dark:text-gray-400">Resolution Rate</p>
+          </div>
+        </div>
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-5 shadow-sm flex items-center gap-4">
+          <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 flex items-center justify-center flex-shrink-0">
+            <Phone size={20} />
+          </div>
+          <div>
+            <p className="text-xl font-extrabold text-gray-900 dark:text-white tabular-nums">{escalatedChats}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">WhatsApp Escalations</p>
           </div>
         </div>
       </div>
@@ -183,13 +194,25 @@ export default function AdminChatbotPage() {
                     <span className="text-xs font-bold text-gray-800 dark:text-gray-200 truncate max-w-[150px]">
                       {c.user_identifier || 'Anonymous Guest'}
                     </span>
-                    <span className="text-[10px] text-gray-400 shrink-0">
-                      {new Date(c.last_message_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </span>
+                    <div className="flex items-center gap-1 shrink-0">
+                      {c.lead_intent && (
+                        <span title="Lead intent detected" className="text-[10px] bg-orange-50 dark:bg-orange-950/20 text-[#F26C0C] px-1.5 py-0.5 rounded-lg font-bold flex items-center gap-0.5">
+                          <Flame size={9} /> Lead
+                        </span>
+                      )}
+                      <span className="text-[10px] text-gray-400">
+                        {new Date(c.last_message_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
                   </div>
                   <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 mt-1 leading-relaxed">
                     {c.first_message}
                   </p>
+                  {c.product_interest && (
+                    <span className="inline-block mt-1 text-[10px] bg-indigo-50 dark:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400 px-2 py-0.5 rounded-lg font-semibold">
+                      🧪 {c.product_interest}
+                    </span>
+                  )}
                   <div className="flex items-center justify-between border-t border-gray-50 dark:border-gray-800 mt-3 pt-2 text-[10px] text-gray-400">
                     <span>{c.message_count} messages</span>
                     <StatusBadge status={c.is_resolved ? 'resolved' : 'new'} />

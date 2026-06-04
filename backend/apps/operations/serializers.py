@@ -22,6 +22,7 @@ class ChatConversationSerializer(serializers.ModelSerializer):
             'id', 'session_id', 'user_identifier', 'messages',
             'message_count', 'is_resolved', 'first_message',
             'last_message_at', 'created_at',
+            'lead_intent', 'product_interest', 'escalated_to_whatsapp',
         ]
 
 

@@ -21,6 +21,7 @@ urlpatterns = [
     path('performance/snapshots/', views.PerformanceSnapshotListView.as_view()),
     path('integrations/google-sheets/sync/', views.google_sheets_sync),
     path('ai/product-content/', views.ai_product_content),
+    path('media/import-product-image/', views.import_product_image),
     path('ai/seo-audit/', views.ai_seo_audit),
     path('ai/website-health/', views.ai_website_health),
     path('ai/chatbot/', views.ai_chatbot),

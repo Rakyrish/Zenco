@@ -1,13 +1,22 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Phone, Mail, MapPin, Linkedin, Facebook, Instagram, ArrowRight, ChevronRight } from 'lucide-react'
-import { SITE_CONFIG, PRODUCT_CATEGORIES } from '@/lib/constants'
+import { Phone, Mail, MapPin, Linkedin, Facebook, Instagram, ArrowRight, ChevronRight, MessageCircle } from 'lucide-react'
+import { SITE_CONFIG } from '@/lib/constants'
 import { FaTiktok } from "react-icons/fa";
 import Logo from '@/components/shared/Logo'
+import { getCategories } from '@/lib/api'
+import type { Category } from '@/types'
+import { whatsappHref } from '@/components/products/product-helpers'
 
 export default function Footer() {
   const year = new Date().getFullYear()
+  const [categories, setCategories] = useState<Category[]>([])
+
+  useEffect(() => {
+    getCategories().then(setCategories).catch(() => setCategories([]))
+  }, [])
 
   return (
     <footer className="bg-[#08080c] text-white/70" aria-label="Site footer">
@@ -142,7 +151,7 @@ export default function Footer() {
               Product Categories
             </h3>
             <ul className="space-y-2.5">
-              {PRODUCT_CATEGORIES.map(cat => (
+              {categories.slice(0, 8).map(cat => (
                 <li key={cat.slug}>
                   <Link
                     href={`/products/category/${cat.slug}`}
@@ -203,6 +212,15 @@ export default function Footer() {
               >
                 Contact Us <ArrowRight size={12} />
               </Link>
+              <a
+                href={whatsappHref(undefined, 'footer inquiry')}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-3 flex items-center gap-2 text-green-400 text-xs font-semibold hover:underline"
+              >
+                <MessageCircle size={12} />
+                WhatsApp Sales
+              </a>
             </div>
 
           </div>

@@ -146,7 +146,11 @@ export default function AdminProductsPage() {
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-xl bg-[#0C094D]/5 dark:bg-white/5 flex items-center justify-center flex-shrink-0">
-                        <Package size={16} className="text-[#0C094D]/40 dark:text-white/30" />
+                        {p.image ? (
+                          <img src={p.image} alt={p.name} className="h-full w-full rounded-xl object-cover" loading="lazy" />
+                        ) : (
+                          <Package size={16} className="text-[#0C094D]/40 dark:text-white/30" />
+                        )}
                       </div>
                       <div className="min-w-0">
                         <p className="text-sm font-semibold text-gray-900 dark:text-white truncate max-w-[200px]">{p.name}</p>

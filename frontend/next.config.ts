@@ -1,12 +1,45 @@
 import type { NextConfig } from 'next'
+import { existsSync, readFileSync } from 'fs'
+import path from 'path'
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'
 const mediaUrl = new URL(apiUrl.replace(/\/api\/?$/, ''))
 const apiOrigin = mediaUrl.origin
+const allowedDevOrigins = (process.env.NEXT_ALLOWED_DEV_ORIGINS || '')
+  .split(',')
+  .map(origin => origin.trim())
+  .filter(Boolean)
+const rootEnvPath = path.resolve(process.cwd(), '..', '.env')
+
+function readRootEnvValue(key: string) {
+  if (!existsSync(rootEnvPath)) return ''
+
+  const line = readFileSync(rootEnvPath, 'utf8')
+    .split(/\r?\n/)
+    .find(entry => entry.startsWith(`${key}=`))
+
+  return line?.slice(key.length + 1).trim().replace(/^["']|["']$/g, '') || ''
+}
+
+const companyPhoneNumber =
+  readRootEnvValue('COMPANY_PHONE_NUMBER') ||
+  process.env.COMPANY_PHONE_NUMBER ||
+  process.env.NEXT_PUBLIC_PHONE_NUMBER ||
+  ''
+const companyEmail =
+  readRootEnvValue('COMPANY_EMAIL') ||
+  process.env.COMPANY_EMAIL ||
+  process.env.NEXT_PUBLIC_COMPANY_EMAIL ||
+  ''
 
 const nextConfig: NextConfig = {
   // Strict mode for better DX
   reactStrictMode: true,
+  allowedDevOrigins,
+  env: {
+    NEXT_PUBLIC_PHONE_NUMBER: companyPhoneNumber,
+    NEXT_PUBLIC_COMPANY_EMAIL: companyEmail,
+  },
 
   // Image optimization
   images: {
@@ -16,6 +49,11 @@ const nextConfig: NextConfig = {
         hostname: mediaUrl.hostname,
         port: mediaUrl.port,
         pathname: '/media/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+        pathname: '/**',
       },
     ],
     formats: ['image/avif', 'image/webp'],

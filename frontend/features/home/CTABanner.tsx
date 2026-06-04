@@ -1,8 +1,9 @@
 'use client'
 
 import Link from 'next/link'
-import { ArrowRight, PhoneCall } from 'lucide-react'
+import { ArrowRight, MessageCircle, PhoneCall } from 'lucide-react'
 import { SITE_CONFIG } from '@/lib/constants'
+import { whatsappHref } from '@/components/products/product-helpers'
 
 export default function CTABanner() {
   return (
@@ -27,6 +28,15 @@ export default function CTABanner() {
             Request custom Quote
             <ArrowRight size={18} />
           </Link>
+          <a
+            href={whatsappHref(undefined, 'homepage quote section inquiry')}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn btn-lg w-full sm:w-auto bg-green-600 text-white hover:bg-green-700 flex items-center justify-center gap-2"
+          >
+            <MessageCircle size={18} />
+            WhatsApp Quote
+          </a>
           <a
             href={`tel:${SITE_CONFIG.phone}`}
             className="btn btn-secondary btn-lg w-full sm:w-auto bg-white/10 text-white border-white/20 hover:bg-white/20 hover:border-white/30 backdrop-blur-sm flex items-center justify-center gap-2"

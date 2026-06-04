@@ -43,7 +43,7 @@ export default function HeroSection() {
           </h1>
 
           <p className="text-lg text-gray-300 max-w-xl mx-auto lg:mx-0 leading-relaxed animate-fade-up animate-delay-200">
-            Zenico Chemicals Ltd delivers high-purity industrial chemicals, laboratory reagents,
+            Zenco Systems delivers high-purity industrial chemicals, laboratory reagents,
             water treatment compounds, and bulk specialty chemicals across Kenya and East Africa —
             with rigorous quality guarantees and rapid logistics.
           </p>

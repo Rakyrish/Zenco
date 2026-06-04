@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import {
@@ -8,7 +8,6 @@ import {
   Settings, ExternalLink, Search,
 } from 'lucide-react'
 import { clearAdminTokens, getAdminUser } from '@/lib/admin/auth'
-import { useTheme } from 'next-themes'
 
 // Breadcrumb map
 const LABELS: Record<string, string> = {
@@ -44,10 +43,27 @@ interface AdminTopbarProps {
 
 export default function AdminTopbar({ onMenuClick }: AdminTopbarProps) {
   const router = useRouter()
-  const { theme, setTheme } = useTheme()
+  const [theme, setTheme] = useState<'light' | 'dark'>('light')
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const breadcrumbs = useBreadcrumbs()
   const user = getAdminUser()
+
+  useEffect(() => {
+    const stored = localStorage.getItem('theme') as 'light' | 'dark' | null
+    const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+    const initial = stored || (systemDark ? 'dark' : 'light')
+    document.documentElement.classList.toggle('dark', initial === 'dark')
+    document.documentElement.style.colorScheme = initial
+    setTheme(initial)
+  }, [])
+
+  const toggleTheme = () => {
+    const next = theme === 'dark' ? 'light' : 'dark'
+    setTheme(next)
+    document.documentElement.classList.toggle('dark', next === 'dark')
+    document.documentElement.style.colorScheme = next
+    localStorage.setItem('theme', next)
+  }
 
   const handleLogout = () => {
     clearAdminTokens()
@@ -108,7 +124,7 @@ export default function AdminTopbar({ onMenuClick }: AdminTopbarProps) {
 
         {/* Dark mode toggle */}
         <button
-          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+          onClick={toggleTheme}
           className="p-2 rounded-lg text-gray-500 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
           aria-label="Toggle theme"
         >

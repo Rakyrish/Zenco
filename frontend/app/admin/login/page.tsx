@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Lock, User, ShieldAlert, FlaskConical, Eye, EyeOff, ArrowRight } from 'lucide-react'
 import { useForm } from 'react-hook-form'
@@ -24,7 +24,7 @@ const FEATURES = [
   { icon: '🏭', text: 'Inventory & supplier management' },
 ]
 
-export default function AdminLoginPage() {
+function AdminLoginContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const from = searchParams.get('from') || '/admin/dashboard'
@@ -181,5 +181,13 @@ export default function AdminLoginPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function AdminLoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gray-50 dark:bg-gray-950" />}>
+      <AdminLoginContent />
+    </Suspense>
   )
 }

@@ -1,15 +1,12 @@
 'use client'
 
 import { MessageCircle } from 'lucide-react'
-import { SITE_CONFIG } from '@/lib/constants'
-import { getWhatsAppUrl } from '@/lib/utils'
 import { trackWhatsAppClick } from '@/lib/api'
+import { whatsappHref, whatsappMessage } from '@/components/products/product-helpers'
 
 export default function WhatsAppButton() {
-  const url = getWhatsAppUrl(
-    SITE_CONFIG.whatsapp,
-    'Hello Zenco Systems, I would like to inquire about your chemical products.'
-  )
+  const message = whatsappMessage(undefined, 'floating WhatsApp button inquiry')
+  const url = whatsappHref(undefined, 'floating WhatsApp button inquiry')
 
   return (
     <a
@@ -18,7 +15,7 @@ export default function WhatsAppButton() {
         trackWhatsAppClick({
           page_url: window.location.pathname,
           source: 'floating_button',
-          message: 'Hello Zenco Systems, I would like to inquire about your chemical products.',
+          message,
         }).catch(() => {})
       }}
       target="_blank"

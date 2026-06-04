@@ -4,12 +4,15 @@ import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
-import { Menu, X, ChevronDown, Phone, Mail, Search } from 'lucide-react'
+import { Menu, X, ChevronDown, Phone, Mail, Search, MessageCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { SITE_CONFIG, NAV_LINKS, PRODUCT_CATEGORIES } from '@/lib/constants'
+import { SITE_CONFIG, NAV_LINKS, AVAILABILITY_LABELS } from '@/lib/constants'
 import MobileMenu from './MobileMenu'
 import Logo from '@/components/shared/Logo'
 import ThemeToggle from '@/components/shared/ThemeToggle'
+import { getCategories, getProducts } from '@/lib/api'
+import type { Category, ProductListItem } from '@/types'
+import { whatsappHref } from '@/components/products/product-helpers'
 
 export default function Header() {
   const [scrolled, setScrolled] = useState(false)
@@ -17,6 +20,9 @@ export default function Header() {
   const [megaMenu, setMegaMenu] = useState<string | null>(null)
   const [searchOpen, setSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState<ProductListItem[]>([])
+  const [searchLoading, setSearchLoading] = useState(false)
+  const [categories, setCategories] = useState<Category[]>([])
   const pathname = usePathname()
   const megaRef = useRef<HTMLDivElement>(null)
 
@@ -25,6 +31,29 @@ export default function Header() {
     window.addEventListener('scroll', handleScroll, { passive: true })
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
+
+  useEffect(() => {
+    getCategories().then(setCategories).catch(() => setCategories([]))
+  }, [])
+
+  useEffect(() => {
+    if (!searchOpen || searchQuery.trim().length < 2) {
+      setSearchResults([])
+      return
+    }
+    const timer = window.setTimeout(async () => {
+      setSearchLoading(true)
+      try {
+        const data = await getProducts({ search: searchQuery.trim() })
+        setSearchResults(data.results.slice(0, 6))
+      } catch {
+        setSearchResults([])
+      } finally {
+        setSearchLoading(false)
+      }
+    }, 180)
+    return () => window.clearTimeout(timer)
+  }, [searchOpen, searchQuery])
 
   useEffect(() => {
     setMobileOpen(false)
@@ -171,7 +200,7 @@ export default function Header() {
                           Product Categories
                         </p>
                         <div className="grid grid-cols-3 gap-3">
-                          {PRODUCT_CATEGORIES.map(cat => (
+                          {categories.slice(0, 9).map(cat => (
                             <Link
                               key={cat.slug}
                               href={`/products/category/${cat.slug}`}
@@ -182,6 +211,7 @@ export default function Header() {
                               </div>
                               <span className="text-sm font-medium text-gray-700 group-hover/item:text-accent transition-colors">
                                 {cat.name}
+                                <span className="ml-1 text-xs text-gray-400">({cat.product_count})</span>
                               </span>
                             </Link>
                           ))}
@@ -200,6 +230,15 @@ export default function Header() {
                         >
                           Request Quote
                         </Link>
+                        <a
+                          href={whatsappHref(undefined, 'header mega menu inquiry')}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-green-700"
+                        >
+                          <MessageCircle size={15} />
+                          WhatsApp Sales
+                        </a>
                         <Link
                           href="/products"
                           className="inline-flex items-center gap-2 text-white/80 hover:text-white text-sm font-medium mt-3 transition-colors"
@@ -272,6 +311,50 @@ export default function Header() {
                   className="w-full bg-white/10 border border-white/20 rounded-xl pl-10 pr-4 py-2.5 text-white placeholder:text-white/50 text-sm focus:outline-none focus:ring-2 focus:ring-accent/50 focus:bg-white/15 transition-all"
                 />
               </form>
+              <div className="mt-3 rounded-lg border border-white/10 bg-white shadow-2xl dark:border-gray-800 dark:bg-gray-950">
+                <div className="border-b border-gray-100 px-4 py-2 text-xs font-bold uppercase tracking-wide text-gray-500 dark:border-gray-800 dark:text-gray-400">
+                  Instant product search
+                </div>
+                {searchQuery.trim().length < 2 ? (
+                  <p className="px-4 py-4 text-sm text-gray-600 dark:text-gray-300">Search by product name, category, chemical use, or application.</p>
+                ) : searchLoading ? (
+                  <p className="px-4 py-4 text-sm font-semibold text-gray-600 dark:text-gray-300">Searching catalog...</p>
+                ) : searchResults.length ? (
+                  <div className="max-h-96 overflow-y-auto">
+                    {searchResults.map(product => (
+                      <div
+                        key={product.id}
+                        className="flex items-center gap-3 border-b border-gray-100 px-4 py-3 last:border-0 hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-900"
+                      >
+                        <Link href={`/products/${product.slug}`} onClick={() => setSearchOpen(false)} className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-md bg-gray-100 dark:bg-gray-800">
+                          {product.image ? (
+                            <Image src={product.image} alt={product.name} width={48} height={48} className="h-full w-full object-cover" />
+                          ) : (
+                            <div className="flex h-full w-full items-center justify-center text-xs font-bold text-gray-400">Z</div>
+                          )}
+                        </Link>
+                        <Link href={`/products/${product.slug}`} onClick={() => setSearchOpen(false)} className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-bold text-gray-950 dark:text-white">{product.name}</p>
+                          <p className="truncate text-xs text-gray-600 dark:text-gray-400">
+                            {product.category_name || 'Product catalog'} · {(AVAILABILITY_LABELS[product.availability] || AVAILABILITY_LABELS.in_stock).label}
+                          </p>
+                        </Link>
+                        <a
+                          href={whatsappHref(product, 'header search result inquiry')}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-md bg-green-600 text-white hover:bg-green-700"
+                          aria-label={`Ask on WhatsApp about ${product.name}`}
+                        >
+                          <MessageCircle size={16} />
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="px-4 py-4 text-sm text-gray-600 dark:text-gray-300">No matching products yet. Try a category or application.</p>
+                )}
+              </div>
             </div>
           )}
         </div>

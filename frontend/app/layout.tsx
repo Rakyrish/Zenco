@@ -4,7 +4,7 @@ import { SITE_CONFIG } from '@/lib/constants'
 import { organizationSchema, localBusinessSchema } from '@/lib/metadata'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
-import WhatsAppButton from '@/components/shared/WhatsAppButton'
+import ChatbotWidget from '@/components/shared/ChatbotWidget'
 import './globals.css'
 
 const inter = Inter({
@@ -99,7 +99,10 @@ export default function RootLayout({
             __html: `
               (function() {
                 try {
-                  const theme = localStorage.getItem('theme') || 'light';
+                  const stored = localStorage.getItem('theme');
+                  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                  const theme = stored || (prefersDark ? 'dark' : 'light');
+                  document.documentElement.style.colorScheme = theme;
                   if (theme === 'dark') {
                     document.documentElement.classList.add('dark');
                   } else {
@@ -135,7 +138,7 @@ export default function RootLayout({
           {children}
         </main>
         <Footer />
-        <WhatsAppButton />
+        <ChatbotWidget />
       </body>
     </html>
   )

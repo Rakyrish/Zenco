@@ -54,22 +54,33 @@ export async function getCategories(): Promise<Category[]> {
   return data.results
 }
 
+export async function getCategoryBySlug(slug: string): Promise<Category> {
+  return fetchAPI<Category>(`/products/categories/${slug}/`, {}, 'force-cache', 1800)
+}
+
 export async function getProducts(params?: {
   category?: string
   search?: string
   page?: number
   featured?: boolean
+  availability?: string
+  ordering?: string
+  cache?: RequestCache
+  revalidate?: number
 }): Promise<PaginatedResponse<ProductListItem>> {
   const query = new URLSearchParams()
   if (params?.category) query.set('category__slug', params.category)
   if (params?.search) query.set('search', params.search)
   if (params?.page) query.set('page', String(params.page))
   if (params?.featured) query.set('is_featured', 'true')
+  if (params?.availability) query.set('availability', params.availability)
+  if (params?.ordering) query.set('ordering', params.ordering)
 
   return fetchAPI<PaginatedResponse<ProductListItem>>(
     `/products/?${query}`,
     {},
-    'no-store',
+    params?.cache || 'no-store',
+    params?.revalidate,
   )
 }
 

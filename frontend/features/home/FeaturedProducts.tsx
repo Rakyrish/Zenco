@@ -1,120 +1,84 @@
-'use client'
-
-import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { ArrowRight, ShoppingBag, Eye } from 'lucide-react'
-import { getFeaturedProducts } from '@/lib/api'
-import type { ProductListItem } from '@/types'
-import { mediaUrl } from '@/lib/utils'
+import { ArrowRight, MessageCircle } from 'lucide-react'
+import ProductCard from '@/components/products/ProductCard'
+import { whatsappHref } from '@/components/products/product-helpers'
+import { getCategories, getFeaturedProducts, getProducts } from '@/lib/api'
+import ProductCategoryBrowser, { type CategoryShelf } from './ProductCategoryBrowser'
 
-export default function FeaturedProducts() {
-  const [products, setProducts] = useState<ProductListItem[]>([])
-  const [loading, setLoading] = useState(true)
+async function getHomepageShelves(): Promise<CategoryShelf[]> {
+  const categories = await getCategories()
+  const activeCategories = categories
+    .filter(category => category.is_active !== false && category.product_count > 0)
+    .sort((a, b) => a.sort_order - b.sort_order)
+    .slice(0, 7)
 
-  useEffect(() => {
-    async function load() {
-      try {
-        const data = await getFeaturedProducts()
-        setProducts(data.slice(0, 4))
-      } catch (err) {
-        console.error('Failed to load featured products.', err)
-        setProducts([])
-      } finally {
-        setLoading(false)
+  const shelves = await Promise.all(
+    activeCategories.map(async category => {
+      const data = await getProducts({
+        category: category.slug,
+        ordering: '-created_at',
+        page: 1,
+        cache: 'force-cache',
+        revalidate: 1800,
+      })
+
+      return {
+        category,
+        products: data.results.slice(0, 8),
+        total: data.count,
       }
-    }
-    load()
-  }, [])
+    }),
+  )
+
+  return shelves.filter(shelf => shelf.products.length > 0)
+}
+
+export default async function FeaturedProducts() {
+  const [featuredData, shelves] = await Promise.all([
+    getFeaturedProducts().catch(() => []),
+    getHomepageShelves().catch(() => []),
+  ])
+  const featured = featuredData.slice(0, 8)
 
   return (
-    <section className="section bg-surface">
-      <div className="container-xl">
-        <div className="flex flex-col md:flex-row items-start md:items-end justify-between mb-12">
+    <section className="bg-zinc-50 py-14">
+      <div className="container-xl px-4">
+        <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
-            <span className="section-tag">Featured Catalog</span>
-            <h2 className="section-title">Most In-Demand Chemical Products</h2>
-            <p className="section-subtitle mt-2">
-              Explore our core premium industrial raw materials in stock and ready for dispatch.
+            <span className="section-tag">Featured Products</span>
+            <h2 className="section-title">Industrial Product Catalog</h2>
+            <p className="section-subtitle mt-2 max-w-3xl">
+              Browse Zenco Chemicals Ltd products by category, compare availability quickly, and reach sales for fast quotation support.
             </p>
           </div>
-          <Link
-            href="/products"
-            className="inline-flex items-center gap-2 text-accent font-semibold hover:underline mt-4 md:mt-0 group"
-          >
-            Browse Full Catalog
-            <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <a href={whatsappHref(undefined, 'homepage catalog inquiry')} target="_blank" rel="noopener noreferrer" className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-green-600 px-4 text-sm font-black text-white hover:bg-green-700">
+              <MessageCircle size={17} />
+              WhatsApp Sales
+            </a>
+            <Link href="/products" className="inline-flex h-11 items-center justify-center gap-2 rounded-md border border-zinc-200 bg-white px-4 text-sm font-black text-primary hover:border-accent">
+              Full Catalog
+              <ArrowRight size={16} />
+            </Link>
+          </div>
         </div>
 
-        {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="animate-pulse bg-white rounded-2xl h-80 border border-gray-100" />
-            ))}
+        {/* {featured.length > 0 && (
+          <div>
+            <div className="mb-5 flex items-end justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-black text-primary">Featured Products</h2>
+                <p className="mt-1 text-sm text-zinc-500">Priority products selected from the Finstar Chemicals catalog.</p>
+              </div>
+              <Link href="/products?sort=-created_at" className="text-sm font-bold text-accent hover:text-primary">View all</Link>
+            </div>
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4 lg:gap-5">
+              {featured.map((product, index) => <ProductCard key={product.id} product={product} priority={index < 4} />)}
+            </div>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {products.map(product => (
-              <article key={product.id} className="card-hover bg-white flex flex-col justify-between group">
-                <div className="p-6">
-                  {/* Category & Availability */}
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="text-[10px] font-bold text-accent bg-accent/5 px-2.5 py-1 rounded-md uppercase tracking-wider">
-                      {product.category_name}
-                    </span>
-                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded-md">
-                      <span className="h-1 w-1 rounded-full bg-green-500" />
-                      In Stock
-                    </span>
-                  </div>
+        )} */}
 
-                  {/* Title & Desc */}
-                  <h3 className="text-lg font-bold text-primary mb-2 line-clamp-1 group-hover:text-accent transition-colors">
-                    {product.name}
-                  </h3>
-                  <p className="text-sm text-gray-500 line-clamp-3 leading-relaxed mb-6">
-                    {product.short_description}
-                  </p>
-
-                  {/* Regions info */}
-                  <div className="space-y-1.5 border-t border-gray-100 pt-4">
-                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                      Regions Available:
-                    </p>
-                    <div className="flex flex-wrap gap-1">
-                      {product.regions_available.map(reg => (
-                        <span
-                          key={reg}
-                          className="text-[10px] font-medium text-gray-600 bg-gray-100 px-2 py-0.5 rounded"
-                        >
-                          {reg}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Footer actions */}
-                <div className="border-t border-gray-100 bg-gray-50/50 p-4 flex gap-2">
-                  <Link
-                    href={`/products/${product.slug}`}
-                    className="flex-1 btn bg-primary hover:bg-primary-600 text-white text-xs py-2 rounded-lg font-semibold flex items-center justify-center gap-1.5"
-                  >
-                    <Eye size={14} />
-                    Details
-                  </Link>
-                  <Link
-                    href={`/contact?type=quote&product=${encodeURIComponent(product.name)}`}
-                    className="flex-1 btn bg-accent hover:bg-accent-500 text-white text-xs py-2 rounded-lg font-semibold flex items-center justify-center gap-1.5"
-                  >
-                    <ShoppingBag size={14} />
-                    Quote
-                  </Link>
-                </div>
-              </article>
-            ))}
-          </div>
-        )}
+        <ProductCategoryBrowser shelves={shelves} />
       </div>
     </section>
   )

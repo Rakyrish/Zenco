@@ -35,7 +35,10 @@ async function adminFetch<T>(endpoint: string, options: RequestInit = {}, retry 
 
   if (!res.ok) {
     let msg = `API Error ${res.status}`
-    try { const b = await res.json(); msg = b.detail || b.message || msg } catch { /* */ }
+    try {
+      const b = await res.json()
+      msg = b.detail || b.message || Object.entries(b).map(([key, value]) => `${key}: ${Array.isArray(value) ? value.join(', ') : String(value)}`).join(' | ') || msg
+    } catch { /* */ }
     throw new Error(msg)
   }
 
@@ -120,9 +123,29 @@ export async function uploadProductImage(productId: string, file: File): Promise
   return adminUpload<{ image: string }>(`/products/admin/${productId}/upload-image/`, form)
 }
 
+export async function importProductImage(productId: string, imageUrl: string): Promise<{ image: string }> {
+  return adminFetch<{ image: string }>(`/products/admin/${productId}/import-image/`, {
+    method: 'POST',
+    body: JSON.stringify({ image_url: imageUrl }),
+  })
+}
+
 export async function getAdminCategories(): Promise<AdminProductCategory[]> {
   const data = await adminFetch<AdminPaginatedResponse<AdminProductCategory>>('/products/categories/')
   return data.results
+}
+
+export async function createProductCategory(data: {
+  name: string
+  slug?: string
+  description?: string
+  seo_title?: string
+  seo_description?: string
+}): Promise<AdminProductCategory> {
+  return adminFetch<AdminProductCategory>('/products/categories/', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
 }
 
 // ─── Blog ─────────────────────────────────────────────────────────────────
@@ -297,7 +320,14 @@ export async function createAdminUser(data: Pick<AdminUser, 'username' | 'email'
 }
 
 // ─── AI Assistants ───────────────────────────────────────────────────────
-export async function generateProductContent(data: { image_url?: string; prompt?: string }): Promise<{ content: string }> {
+export async function generateProductContent(data: { image_url?: string; image?: File; prompt?: string }): Promise<{ content: string }> {
+  if (data.image) {
+    const form = new FormData()
+    form.append('image', data.image)
+    if (data.prompt) form.append('prompt', data.prompt)
+    if (data.image_url) form.append('image_url', data.image_url)
+    return adminUpload<{ content: string }>('/ai/product-content/', form)
+  }
   return adminFetch<{ content: string }>('/ai/product-content/', { method: 'POST', body: JSON.stringify(data) })
 }
 

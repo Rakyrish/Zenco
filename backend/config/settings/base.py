@@ -10,7 +10,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 SECRET_KEY = config('DJANGO_SECRET_KEY')
 DEBUG = config('DJANGO_DEBUG', default=False, cast=bool)
-ALLOWED_HOSTS = config('DJANGO_ALLOWED_HOSTS', default='localhost').split(',')
+ALLOWED_HOSTS = config('DJANGO_ALLOWED_HOSTS').split(',')
 
 DJANGO_APPS = [
     'django.contrib.admin',
@@ -143,6 +143,7 @@ REST_FRAMEWORK = {
         'anon': '100/hour',
         'user': '1000/hour',
         'inquiry': '10/hour',
+        'chatbot': '30/hour',
     },
     'DEFAULT_RENDERER_CLASSES': [
         'rest_framework.renderers.JSONRenderer',
@@ -187,6 +188,10 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+CLOUDINARY_CLOUD_NAME = config('CLOUDINARY_CLOUD_NAME', default='')
+CLOUDINARY_API_KEY = config('CLOUDINARY_API_KEY', default='')
+CLOUDINARY_API_SECRET = config('CLOUDINARY_API_SECRET', default='')
+CLOUDINARY_PRODUCTS_FOLDER = config('CLOUDINARY_PRODUCTS_FOLDER', default='zenco/products')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 

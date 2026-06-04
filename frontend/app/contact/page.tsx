@@ -3,12 +3,13 @@
 import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { Phone, Mail, MapPin, MessageSquare, Clock, Send, CheckCircle, ShieldAlert } from 'lucide-react'
+import { Phone, Mail, MapPin, MessageSquare, Clock, Send, CheckCircle, ShieldAlert, MessageCircle } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { submitInquiry } from '@/lib/api'
 import { SITE_CONFIG } from '@/lib/constants'
+import { whatsappHref } from '@/components/products/product-helpers'
 
 const schema = z.object({
   full_name: z.string().min(3, 'Name must be at least 3 characters'),
@@ -73,6 +74,27 @@ function ContactContent() {
           <p className="text-gray-500 max-w-2xl mx-auto">
             Ready to order or need support? Fill out the form below or use our contact details to talk to our sales agents.
           </p>
+          <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <a
+              href={whatsappHref(initialProduct ? {
+                name: initialProduct,
+                slug: '',
+                category_name: 'Product inquiry',
+              } : undefined, 'contact page inquiry')}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex h-12 w-full max-w-xs items-center justify-center gap-2 rounded-md bg-green-600 px-5 text-sm font-black text-white hover:bg-green-700 sm:w-auto"
+            >
+              <MessageCircle size={18} />
+              WhatsApp Sales Directly
+            </a>
+            {SITE_CONFIG.phone && (
+              <a href={`tel:${SITE_CONFIG.phone}`} className="inline-flex h-12 w-full max-w-xs items-center justify-center gap-2 rounded-md border border-primary/20 bg-white px-5 text-sm font-black text-primary hover:bg-primary hover:text-white sm:w-auto">
+                <Phone size={18} />
+                Call Sales
+              </a>
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">

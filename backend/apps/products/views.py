@@ -12,11 +12,15 @@ from .serializers import (
 )
 
 
-class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
+class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.filter(is_active=True).prefetch_related('products')
     serializer_class = CategorySerializer
-    permission_classes = [AllowAny]
     lookup_field = 'slug'
+
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve']:
+            return [AllowAny()]
+        return [IsAdminUser()]
 
     @method_decorator(cache_page(60 * 15))  # Cache 15 mins
     def list(self, request, *args, **kwargs):
@@ -82,9 +86,33 @@ class ProductAdminViewSet(viewsets.ModelViewSet):
         image = request.FILES.get('image')
         if not image:
             return Response({'message': 'No image uploaded.'}, status=status.HTTP_400_BAD_REQUEST)
-        product.image = image
-        product.save(update_fields=['image', 'updated_at'])
-        return Response({'image': request.build_absolute_uri(product.image.url)})
+        try:
+            from apps.operations.views import _save_product_image
+            media_url = _save_product_image(
+                product,
+                image.read(),
+                image.name,
+                image.content_type or 'image/jpeg',
+            )
+        except Exception:
+            product.image = image
+            product.save(update_fields=['image', 'updated_at'])
+            media_url = product.image.url
+        return Response({'image': request.build_absolute_uri(media_url) if media_url.startswith('/') else media_url})
+
+    @action(detail=True, methods=['post'], url_path='import-image')
+    def import_image(self, request, pk=None):
+        product = self.get_object()
+        image_url = request.data.get('image_url', '').strip()
+        if not image_url:
+            return Response({'message': 'Image URL is required.'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            from apps.operations.views import _read_remote_image, _save_product_image
+            raw, content_type = _read_remote_image(image_url)
+            media_url = _save_product_image(product, raw, f'{product.slug}.jpg', content_type)
+            return Response({'image': request.build_absolute_uri(media_url) if media_url.startswith('/') else media_url})
+        except Exception as exc:
+            return Response({'message': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=['get'], url_path='category/(?P<category_slug>[^/.]+)')
     def by_category(self, request, category_slug=None):

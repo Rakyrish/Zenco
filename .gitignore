@@ -1,75 +1,75 @@
-# Python / Django
-__pycache__/
-*.py[cod]
-*.pyo
-*.pyd
-.Python
-*.egg
-*.egg-info/
-dist/
-build/
-.eggs/
-/lib/
-/lib64/
-parts/
-sdist/
-var/
-*.manifest
-*.spec
-pip-log.txt
-pip-delete-this-directory.txt
-.tox/
-.coverage
-.coverage.*
-htmlcov/
-.pytest_cache/
-nosetests.xml
-coverage.xml
-*.mo
-*.pot
-local_settings.py
-db.sqlite3
-db.sqlite3-journal
-*.log
-media/
-staticfiles/
-.env
-*.env
-
-# Virtual Environments
-venv/
-env/
-ENV/
-.venv/
-
-# Node / Next.js
+# Frontend (Node.js)
 node_modules/
 .next/
 out/
-.npm
-*.tgz
-*.tsbuildinfo
-next-env.d.ts
-.env.local
-.env.development.local
-.env.test.local
+build/
+dist/
+*.env.local
+*.env.*.local
+.DS_Store
+*.pem
+.vercel
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.env
 .env.production.local
 
-# Docker
-*.override.yml
-.docker/
+# Backend (Python)
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+PIPFILE.lock
+venv/
+ENV/
+env/
+.venv
+.env.example
+!.env.example
+.env.local
+.env.*.local
+.env
 
-# IDE
+# Django
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+/media
+/static
+
+# IDEs
 .vscode/
 .idea/
 *.swp
 *.swo
+*~
+.sublime-project
+.sublime-workspace
+
+# OS
 .DS_Store
 Thumbs.db
 
-# Secrets
-*.pem
-*.key
-*.crt
-ssl/
-secrets/
+# Environment
+.env
+.env.local
+.env.*.local
+!.env.example
