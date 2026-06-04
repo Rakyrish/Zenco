@@ -3,7 +3,7 @@ import StatsSection from '@/features/home/StatsSection'
 import FeaturedProducts from '@/features/home/FeaturedProducts'
 import WhyChooseUs from '@/features/home/WhyChooseUs'
 import ServicesOverview from '@/features/home/ServicesOverview'
-import RecentBlog from '@/features/home/RecentBlog'
+// import RecentBlog from '@/features/home/RecentBlog'
 import CTABanner from '@/features/home/CTABanner'
 
 export default function HomePage() {
@@ -14,7 +14,7 @@ export default function HomePage() {
       <FeaturedProducts />
       <WhyChooseUs />
       <ServicesOverview />
-      <RecentBlog />
+      {/* <RecentBlog /> */}
       <CTABanner />
     </div>
   )

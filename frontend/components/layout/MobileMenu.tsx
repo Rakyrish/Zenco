@@ -1,12 +1,14 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { X, ChevronRight, Phone, Mail, MessageCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { NAV_LINKS, SITE_CONFIG, PRODUCT_CATEGORIES } from '@/lib/constants'
-import { getWhatsAppUrl } from '@/lib/utils'
+import { NAV_LINKS, SITE_CONFIG } from '@/lib/constants'
 import Logo from '@/components/shared/Logo'
+import { getCategories } from '@/lib/api'
+import type { Category } from '@/types'
+import { whatsappHref } from '@/components/products/product-helpers'
 
 interface MobileMenuProps {
   isOpen: boolean
@@ -15,6 +17,11 @@ interface MobileMenuProps {
 
 export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
   const ref = useRef<HTMLDivElement>(null)
+  const [categories, setCategories] = useState<Category[]>([])
+
+  useEffect(() => {
+    getCategories().then(setCategories).catch(() => setCategories([]))
+  }, [])
 
   useEffect(() => {
     if (isOpen) {
@@ -79,7 +86,7 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
             <p className="text-white/40 text-xs font-bold uppercase tracking-widest px-4 mb-3">
               Product Categories
             </p>
-            {PRODUCT_CATEGORIES.slice(0, 5).map(cat => (
+            {categories.slice(0, 6).map(cat => (
               <Link
                 key={cat.slug}
                 href={`/products/category/${cat.slug}`}
@@ -117,7 +124,7 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
             {SITE_CONFIG.email}
           </a>
           <a
-            href={getWhatsAppUrl(SITE_CONFIG.whatsapp, 'Hello Zenco Systems, I have an inquiry.')}
+            href={whatsappHref(undefined, 'mobile menu inquiry')}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-3 bg-green-600 hover:bg-green-700 text-white rounded-xl px-4 py-3 text-sm font-semibold transition-colors w-full"

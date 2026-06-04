@@ -101,7 +101,7 @@ export default function Logo({
               subtitleClassName
             )}
           >
-            Chemical Division
+            Chemicals Division
           </span>
         </div>
       )}

@@ -64,3 +64,9 @@ class InquiryListView(generics.ListAPIView):
     permission_classes = [IsAdminUser]
     filterset_fields = ['status', 'inquiry_type']
     search_fields = ['full_name', 'email', 'company', 'message']
+
+
+class InquiryAdminDetailView(generics.RetrieveUpdateAPIView):
+    queryset = Inquiry.objects.all()
+    serializer_class = InquiryAdminSerializer
+    permission_classes = [IsAdminUser]

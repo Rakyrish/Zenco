@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Award, ShieldCheck, HeartHandshake, Eye, Target, Users, Map } from 'lucide-react'
+import { Award, ShieldCheck, HeartHandshake, Eye, Target, Users, Map, CheckCircle } from 'lucide-react'
 import { CERTIFICATIONS } from '@/lib/constants'
 
 export default function AboutPage() {

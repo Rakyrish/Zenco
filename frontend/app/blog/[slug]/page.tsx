@@ -23,49 +23,8 @@ export default function BlogDetailPage() {
         const data = await getBlogPostBySlug(slug)
         setPost(data)
       } catch (err) {
-        console.error('Failed to get article details, using mock fallback.', err)
-        // Fallback Mock detail
-        setPost({
-          id: '1',
-          title: 'Modern Wastewater Treatment: Choosing the Right Flocculants',
-          slug: 'choosing-right-flocculants-wastewater',
-          excerpt: 'Wastewater purification efficiency depends entirely on polymer weight and charge. Learn how to optimize dosage rates.',
-          content: `
-<h2>The Role of Flocculants in Industrial Water Treatment</h2>
-<p>Industrial wastewater contains complex suspended colloids that resist natural settling due to negative electrical surface charges. Flocculants—typically long-chain polymers—are introduced to bridge these particles into larger aggregates, or "flocs," that rapidly precipitate out of suspension.</p>
-
-<h3>Understanding Cationic vs. Anionic Polymers</h3>
-<p>Flocculants are classified by their electrical charge properties:</p>
-<ul>
-  <li><strong>Cationic Flocculants:</strong> Carry positive charges. They are highly effective for organic residues, biological sludge (like that found in municipal sewage or dairies), and food processing waste.</li>
-  <li><strong>Anionic Flocculants:</strong> Carry negative charges. Primarily utilized in mineral processing, mining operations, metal surface treatments, and inorganic tailing ponds.</li>
-</ul>
-
-<h3>Key Factors in Selection & Dosage Calculations</h3>
-<p>Selecting the optimal flocculation agent requires testing three critical parameters:</p>
-<ol>
-  <li><strong>Sludge pH Level:</strong> pH dictates polymer charge stability. Cationic polymers lose effectiveness in highly alkaline environments.</li>
-  <li><strong>Viscosity / Agitation Rate:</strong> High-shear mixing breaks apart newly formed flocs. Polymer addition must happen post-shear.</li>
-  <li><strong>Active Solids Percentage:</strong> Over-dosing causes polymer saturation, which actually restabilizes colloids instead of precipitating them. Jar testing is essential.</li>
-</ol>
-
-<h3>Zenco Systems Expert Formulation Services</h3>
-<p>Our Nairobi chemical laboratory assists manufacturing operations with customized jar tests to establish precise chemical dosages, preventing raw material waste and ensuring full NEMA discharge compliance. Contact our technical team today to schedule an onsite water quality review.</p>
-          `,
-          category: { id: 1, name: 'Water Treatment', slug: 'water-treatment', description: '', color: 'blue' },
-          featured_image: null,
-          og_image: null,
-          tags: ['Water Treatment', 'Flocculants', 'Compliance'],
-          reading_time: 5,
-          is_featured: true,
-          published_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          author_name: 'Dr. Arthur Otieno',
-          views_count: 142,
-          seo_title: 'Choosing Flocculants for Industrial Wastewater | Zenco Systems',
-          seo_description: 'Expert guide on choosing cationic vs anionic flocculant polymers for water treatment systems. Calculate optimal polymer dosage.',
-          canonical_url: '',
-        })
+        console.error('Failed to get article details.', err)
+        setPost(null)
       } finally {
         setLoading(false)
       }

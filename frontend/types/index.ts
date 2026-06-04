@@ -24,17 +24,19 @@ export interface ProductListItem {
   category_slug: string
   image: string | null
   availability: 'in_stock' | 'limited' | 'out_of_stock' | 'on_order'
+  stock_quantity?: number
   is_featured: boolean
   regions_available: string[]
 }
 
-export interface ProductDetail extends ProductListItem {
+export interface ProductDetail extends Omit<ProductListItem, 'category'> {
   description: string
   category: Category
   specifications: Record<string, string>
   applications: string[]
   gallery: string[]
   datasheet: string | null
+  packaging?: string
   seo_title: string
   seo_description: string
   schema_data: Record<string, unknown>

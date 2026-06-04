@@ -27,7 +27,7 @@ python-decouple==3.8
 resend==2.3.0
 
 # Security
-django-security==0.17.0
+django-security==1.1.6
 
 # Production
 gunicorn==22.0.0
@@ -39,6 +39,7 @@ django-haystack==3.3.0
 # Utilities
 shortuuid==1.0.13
 Markdown==3.6
+openai>=1.93.0
 
 # Dev/Testing
 pytest-django==4.8.0

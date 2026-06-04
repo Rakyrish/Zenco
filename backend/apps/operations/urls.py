@@ -1,0 +1,28 @@
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    path('admin/dashboard/stats/', views.dashboard_stats),
+    path('inventory/', views.InventoryListView.as_view()),
+    path('inventory/<uuid:pk>/', views.InventoryDetailView.as_view()),
+    path('inventory/suppliers/', views.suppliers),
+    path('analytics/overview/', views.analytics_overview),
+    path('analytics/top-products/', views.top_products),
+    path('analytics/top-blog-posts/', views.top_blog_posts),
+    path('analytics/conversions/', views.conversions),
+    path('seo/pages/', views.seo_pages),
+    path('seo/pages/<str:pk>/', views.seo_page_detail),
+    path('settings/', views.settings_list),
+    path('settings/<str:key>/', views.setting_detail),
+    path('chatbot/conversations/', views.ChatbotConversationListView.as_view()),
+    path('chatbot/conversations/<str:pk>/resolve/', views.resolve_chatbot_conversation),
+    path('analytics/whatsapp-click/', views.whatsapp_click),
+    path('analytics/whatsapp/', views.whatsapp_analytics),
+    path('performance/snapshots/', views.PerformanceSnapshotListView.as_view()),
+    path('integrations/google-sheets/sync/', views.google_sheets_sync),
+    path('ai/product-content/', views.ai_product_content),
+    path('media/import-product-image/', views.import_product_image),
+    path('ai/seo-audit/', views.ai_seo_audit),
+    path('ai/website-health/', views.ai_website_health),
+    path('ai/chatbot/', views.ai_chatbot),
+]

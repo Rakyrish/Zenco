@@ -65,7 +65,7 @@ export function generatePageMetadata({
       description,
       url,
       siteName: SITE_CONFIG.fullName,
-      type,
+      type: type === 'product' ? 'website' : type,
       locale: 'en_KE',
       images: [
         {

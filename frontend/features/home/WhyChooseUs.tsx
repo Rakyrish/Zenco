@@ -6,7 +6,7 @@ const features = [
   {
     icon: ShieldCheck,
     title: 'Strict Quality Compliance',
-    desc: 'All our products are strictly tested to meet KEBS, ISO 9001:2015, and international safety standards.',
+    desc: 'All our products are strictly tested, and international safety standards.',
   },
   {
     icon: Sparkles,
@@ -18,21 +18,13 @@ const features = [
     title: 'Reliable Regional Delivery',
     desc: 'Equipped with a specialized bulk tanker fleet for safe chemical transport across East Africa.',
   },
-  {
-    icon: HeartHandshake,
-    title: 'Dedicated Customer Service',
-    desc: 'Each corporate client receives a dedicated key account manager and 24/7 emergency support lines.',
-  },
+ 
   {
     icon: Award,
     title: 'Technical Consultation',
     desc: 'Expert chemical engineers assist with product formulation, dilution calculations, and application trials.',
   },
-  {
-    icon: Activity,
-    title: 'Eco-Friendly focus',
-    desc: 'Active NEMA compliance and consultation regarding greener chemical alternatives for local industry.',
-  },
+ 
 ]
 
 export default function WhyChooseUs() {
@@ -52,7 +44,7 @@ export default function WhyChooseUs() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {features.map((feat, i) => {
             const Icon = feat.icon
             return (

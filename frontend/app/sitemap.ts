@@ -35,6 +35,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           lastModified: new Date(),
           changeFrequency: 'weekly' as const,
           priority: 0.8,
+          ...(p.image ? { images: [p.image] } : {}),
         }))
       : []
 

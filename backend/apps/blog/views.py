@@ -1,12 +1,15 @@
 from rest_framework import viewsets, filters
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAdminUser
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 from .models import BlogPost, BlogCategory
-from .serializers import BlogPostListSerializer, BlogPostDetailSerializer, BlogCategorySerializer
+from .serializers import (
+    BlogPostListSerializer, BlogPostDetailSerializer, BlogCategorySerializer,
+    BlogPostAdminSerializer,
+)
 
 
 class BlogCategoryViewSet(viewsets.ReadOnlyModelViewSet):
@@ -51,3 +54,22 @@ class BlogPostViewSet(viewsets.ReadOnlyModelViewSet):
         qs = self.get_queryset().filter(is_featured=True)[:3]
         serializer = BlogPostListSerializer(qs, many=True, context={'request': request})
         return Response(serializer.data)
+
+
+class BlogPostAdminViewSet(viewsets.ModelViewSet):
+    queryset = BlogPost.objects.select_related('category', 'author').order_by('-updated_at')
+    serializer_class = BlogPostAdminSerializer
+    permission_classes = [IsAdminUser]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['category__slug', 'is_featured']
+    search_fields = ['title', 'excerpt', 'content', 'tags']
+    ordering_fields = ['published_at', 'views_count', 'updated_at']
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        status_value = self.request.query_params.get('status')
+        if status_value == 'published':
+            return qs.filter(is_published=True)
+        if status_value == 'draft':
+            return qs.filter(is_published=False)
+        return qs

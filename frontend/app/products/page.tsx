@@ -1,336 +1,234 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
-import { useSearchParams, useRouter } from 'next/navigation'
+import { useEffect, useMemo, useState, Suspense } from 'react'
 import Link from 'next/link'
-import { Search, Eye, ShoppingBag, SlidersHorizontal, Layers, CheckCircle } from 'lucide-react'
-import { getProducts, getCategories } from '@/lib/api'
-import type { ProductListItem, Category } from '@/types'
-import { AVAILABILITY_LABELS, PRODUCT_CATEGORIES } from '@/lib/constants'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { Filter, MessageCircle, Search, SlidersHorizontal, X } from 'lucide-react'
+import ProductCard from '@/components/products/ProductCard'
+import { whatsappHref } from '@/components/products/product-helpers'
+import { getCategories, getProducts } from '@/lib/api'
+import type { Category, ProductListItem } from '@/types'
+
+const sortOptions = [
+  { label: 'Catalog order', value: 'sort_order,name' },
+  { label: 'Newest', value: '-created_at' },
+  { label: 'Alphabetical', value: 'name' },
+  { label: 'Popular', value: '-sort_order' },
+]
 
 function ProductsContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-
-  const initialCategory = searchParams.get('category') || 'all'
-  const initialSearch = searchParams.get('search') || ''
-
   const [products, setProducts] = useState<ProductListItem[]>([])
   const [categories, setCategories] = useState<Category[]>([])
-  const [search, setSearch] = useState(initialSearch)
-  const [selectedCat, setSelectedCat] = useState(initialCategory)
+  const [search, setSearch] = useState(searchParams.get('search') || '')
+  const [category, setCategory] = useState(searchParams.get('category') || 'all')
+  const [availability, setAvailability] = useState(searchParams.get('availability') || 'all')
+  const [sort, setSort] = useState(searchParams.get('sort') || sortOptions[0].value)
+  const [page, setPage] = useState(1)
+  const [hasMore, setHasMore] = useState(false)
   const [loading, setLoading] = useState(true)
 
-  // MOCK Fallbacks in case DRF is offline
-  const mockCategories: Category[] = PRODUCT_CATEGORIES.map((c, idx) => ({
-    id: String(idx + 1),
-    name: c.name,
-    slug: c.slug,
-    description: `Industrial ${c.name.toLowerCase()} supplies.`,
-    icon: '⚗',
-    image: null,
-    sort_order: idx + 1,
-    seo_title: c.name,
-    seo_description: `Zenco Systems ${c.name} supplies.`,
-    product_count: 5,
-    is_active: true,
-  }))
-
-  const mockProducts: ProductListItem[] = [
-    {
-      id: '1',
-      name: 'Sodium Hypochlorite 15%',
-      slug: 'sodium-hypochlorite-15',
-      short_description: 'High-grade water chlorination and disinfection chemical agent.',
-      category: 'water-treatment',
-      category_name: 'Water Treatment',
-      category_slug: 'water-treatment',
-      image: null,
-      availability: 'in_stock',
-      is_featured: true,
-      regions_available: ['Kenya', 'Uganda', 'Tanzania'],
-    },
-    {
-      id: '2',
-      name: 'Industrial Ethyl Acetate',
-      slug: 'ethyl-acetate',
-      short_description: 'Premium organic solvent for paint, coating, and cosmetic formulations.',
-      category: 'solvents-thinners',
-      category_name: 'Solvents & Thinners',
-      category_slug: 'solvents-thinners',
-      image: null,
-      availability: 'in_stock',
-      is_featured: true,
-      regions_available: ['Kenya', 'Rwanda'],
-    },
-    {
-      id: '3',
-      name: 'Hydrochloric Acid 33%',
-      slug: 'hydrochloric-acid-33',
-      short_description: 'Strong mineral acid widely used for metal pickling, pH adjustment and water treatment.',
-      category: 'water-treatment',
-      category_name: 'Water Treatment',
-      category_slug: 'water-treatment',
-      image: null,
-      availability: 'limited',
-      is_featured: true,
-      regions_available: ['Kenya', 'Uganda'],
-    },
-    {
-      id: '4',
-      name: 'Isopropyl Alcohol (IPA) 99.9%',
-      slug: 'isopropyl-alcohol-99',
-      short_description: 'High-purity solvent and sanitizer component for cosmetics and pharmaceuticals.',
-      category: 'pharmaceuticals-cosmetics',
-      category_name: 'Pharma & Cosmetics',
-      category_slug: 'pharmaceuticals-cosmetics',
-      image: null,
-      availability: 'in_stock',
-      is_featured: true,
-      regions_available: ['Kenya', 'Tanzania', 'Rwanda', 'Uganda'],
-    },
-    {
-      id: '5',
-      name: 'Liquid Chlorine',
-      slug: 'liquid-chlorine',
-      short_description: 'Bulk liquid chlorine for municipal water systems and large industrial cooling towers.',
-      category: 'water-treatment',
-      category_name: 'Water Treatment',
-      category_slug: 'water-treatment',
-      image: null,
-      availability: 'on_order',
-      is_featured: false,
-      regions_available: ['Kenya'],
-    },
-    {
-      id: '6',
-      name: 'Toluene Industrial Grade',
-      slug: 'toluene',
-      short_description: 'Standard solvent for chemical syntheses and paint formulations.',
-      category: 'solvents-thinners',
-      category_name: 'Solvents & Thinners',
-      category_slug: 'solvents-thinners',
-      image: null,
-      availability: 'in_stock',
-      is_featured: false,
-      regions_available: ['Kenya', 'Tanzania'],
-    },
-  ]
+  useEffect(() => {
+    const params = new URLSearchParams()
+    if (search) params.set('search', search)
+    if (category !== 'all') params.set('category', category)
+    if (availability !== 'all') params.set('availability', availability)
+    if (sort !== sortOptions[0].value) params.set('sort', sort)
+    router.replace(`/products${params.toString() ? `?${params}` : ''}`, { scroll: false })
+  }, [availability, category, router, search, sort])
 
   useEffect(() => {
-    async function loadData() {
+    async function load() {
       setLoading(true)
+      setPage(1)
       try {
         const [catData, prodData] = await Promise.all([
-          getCategories().catch(() => mockCategories),
+          getCategories(),
           getProducts({
-            category: selectedCat === 'all' ? undefined : selectedCat,
+            category: category === 'all' ? undefined : category,
             search: search || undefined,
-          }).catch(() => ({ results: mockProducts })),
+            availability: availability === 'all' ? undefined : availability,
+            ordering: sort,
+            page: 1,
+          }),
         ])
         setCategories(catData)
-        
-        // Custom local search filter if DRF mock is used
-        let filtered = prodData.results
-        if (selectedCat !== 'all') {
-          filtered = filtered.filter(p => p.category_slug === selectedCat)
-        }
-        if (search) {
-          filtered = filtered.filter(
-            p =>
-              p.name.toLowerCase().includes(search.toLowerCase()) ||
-              p.short_description.toLowerCase().includes(search.toLowerCase())
-          )
-        }
-        setProducts(filtered)
+        setProducts(prodData.results)
+        setHasMore(Boolean(prodData.next))
       } catch (err) {
         console.error('Failed to load products page data', err)
+        setProducts([])
       } finally {
         setLoading(false)
       }
     }
-    loadData()
-  }, [selectedCat, search])
+    load()
+  }, [availability, category, search, sort])
 
-  const handleCategoryChange = (slug: string) => {
-    setSelectedCat(slug)
-    const params = new URLSearchParams(searchParams)
-    if (slug === 'all') {
-      params.delete('category')
-    } else {
-      params.set('category', slug)
-    }
-    router.replace(`/products?${params.toString()}`)
+  const suggestions = useMemo(() => {
+    const term = search.trim().toLowerCase()
+    if (!term) return []
+    return products
+      .filter(product =>
+        product.name.toLowerCase().includes(term) ||
+        product.category_name.toLowerCase().includes(term) ||
+        product.short_description.toLowerCase().includes(term) ||
+        product.regions_available.join(' ').toLowerCase().includes(term)
+      )
+      .slice(0, 5)
+  }, [products, search])
+
+  const loadMore = async () => {
+    const nextPage = page + 1
+    const prodData = await getProducts({
+      category: category === 'all' ? undefined : category,
+      search: search || undefined,
+      availability: availability === 'all' ? undefined : availability,
+      ordering: sort,
+      page: nextPage,
+    })
+    setProducts(prev => [...prev, ...prodData.results])
+    setHasMore(Boolean(prodData.next))
+    setPage(nextPage)
+  }
+
+  const clearFilters = () => {
+    setSearch('')
+    setCategory('all')
+    setAvailability('all')
+    setSort(sortOptions[0].value)
   }
 
   return (
-    <div className="min-h-screen bg-surface py-12">
-      <div className="container-xl px-4">
-        {/* Breadcrumbs & Header */}
-        <div className="mb-10 text-center md:text-left">
-          <div className="flex justify-center md:justify-start items-center gap-2 text-xs text-gray-500 font-semibold mb-3">
+    <div className="min-h-screen bg-zinc-50 pb-20">
+      <section className="border-b border-zinc-200 bg-white">
+        <div className="container-xl px-4 py-10">
+          <div className="mb-4 flex flex-wrap items-center gap-2 text-xs font-semibold text-zinc-500">
             <Link href="/" className="hover:text-accent">Home</Link>
             <span>/</span>
             <span className="text-primary">Products</span>
           </div>
-          <h1 className="text-3xl md:text-5xl font-bold text-primary mb-3">Product Catalog</h1>
-          <p className="text-gray-500 max-w-2xl">
-            Browse through our wide range of industrial, water treatment, and formulation chemicals.
-          </p>
-        </div>
-
-        {/* Filter Toolbar */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* Sidebar Filters */}
-          <aside className="lg:col-span-3 space-y-6">
-            {/* Category selection */}
-            <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
-              <h2 className="text-sm font-bold text-primary uppercase tracking-wider mb-4 flex items-center gap-2">
-                <Layers size={16} className="text-accent" />
-                Categories
-              </h2>
-              <div className="space-y-1">
-                <button
-                  onClick={() => handleCategoryChange('all')}
-                  className={`w-full text-left px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                    selectedCat === 'all'
-                      ? 'bg-accent text-white shadow-glow-accent'
-                      : 'text-gray-600 hover:bg-gray-50'
-                  }`}
-                >
-                  All Categories
-                </button>
-                {categories.map(cat => (
-                  <button
-                    key={cat.slug}
-                    onClick={() => handleCategoryChange(cat.slug)}
-                    className={`w-full text-left px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center justify-between ${
-                      selectedCat === cat.slug
-                        ? 'bg-accent text-white shadow-glow-accent'
-                        : 'text-gray-600 hover:bg-gray-50'
-                    }`}
-                  >
-                    <span>{cat.name}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Quality assurance banner */}
-            <div className="bg-gradient-hero rounded-2xl p-6 text-white pattern-dots border border-white/10 shadow-lg">
-              <CheckCircle size={28} className="text-accent mb-4" />
-              <h3 className="font-bold text-base mb-2">Purity Guaranteed</h3>
-              <p className="text-xs text-white/70 leading-relaxed">
-                All raw chemical consignments undergo strict in-house laboratory checks before delivery.
+          <div className="grid gap-6 lg:grid-cols-[1fr_360px] lg:items-end">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.28em] text-accent">Industrial chemicals catalog</p>
+              <h1 className="mt-3 max-w-4xl text-4xl font-black leading-tight text-primary md:text-6xl">Premium Chemical Product Catalog</h1>
+              <p className="mt-4 max-w-2xl text-sm leading-7 text-zinc-600 md:text-base">
+                Browse Zenco Chemicals Ltd products by category, application, availability, and procurement need across Kenya and East Africa.
               </p>
             </div>
-          </aside>
-
-          {/* Product Grid */}
-          <main className="lg:col-span-9 space-y-6">
-            {/* Search and total counts */}
-            <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm flex flex-col md:flex-row items-center gap-4 justify-between">
-              <div className="relative w-full md:w-96">
-                <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input
-                  type="text"
-                  value={search}
-                  onChange={e => setSearch(e.target.value)}
-                  placeholder="Search products by chemical formula or name…"
-                  className="w-full pl-10 pr-4 py-2 text-sm bg-gray-50 border border-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent transition-all"
-                />
-              </div>
-              <div className="text-xs text-gray-500 font-semibold flex items-center gap-1">
-                <SlidersHorizontal size={14} className="text-accent" />
-                Showing {products.length} Products
-              </div>
+            <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-5">
+              <p className="text-sm font-black text-primary">Need bulk supply guidance?</p>
+              <p className="mt-1 text-xs leading-relaxed text-zinc-500">Send the product name, destination, quantity, and packaging preference.</p>
+              <a href={whatsappHref()} target="_blank" rel="noopener noreferrer" className="mt-4 inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-green-600 text-sm font-black text-white hover:bg-green-700">
+                <MessageCircle size={17} />
+                WhatsApp Sales
+              </a>
             </div>
+          </div>
+        </div>
+      </section>
 
-            {loading ? (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {[...Array(6)].map((_, i) => (
-                  <div key={i} className="animate-pulse bg-white rounded-2xl h-80 border border-gray-100" />
+      <div className="container-xl px-4 py-8">
+        <div className="mb-6 grid gap-3 rounded-lg border border-zinc-200 bg-white p-4 shadow-sm lg:grid-cols-[1fr_180px_180px_190px]">
+          <div className="relative">
+            <Search size={17} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+            <input
+              value={search}
+              onChange={event => setSearch(event.target.value)}
+              placeholder="Search by product, category, application, industry, keyword..."
+              className="h-11 w-full rounded-md border border-zinc-200 bg-zinc-50 pl-10 pr-10 text-sm outline-none transition focus:border-accent focus:bg-white focus:ring-2 focus:ring-accent/20"
+            />
+            {search && (
+              <button type="button" onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400">
+                <X size={16} />
+              </button>
+            )}
+            {!!suggestions.length && (
+              <div className="absolute left-0 right-0 top-12 z-30 overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-xl">
+                {suggestions.map(product => (
+                  <Link key={product.id} href={`/products/${product.slug}`} className="flex items-center gap-3 border-b border-zinc-100 p-3 last:border-b-0 hover:bg-zinc-50">
+                    <span className="h-10 w-12 overflow-hidden rounded bg-zinc-100">
+                      {product.image && <img src={product.image} alt={product.name} className="h-full w-full object-cover" loading="lazy" />}
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm font-bold text-primary">{product.name}</span>
+                      <span className="block text-xs text-zinc-500">{product.category_name}</span>
+                    </span>
+                  </Link>
                 ))}
               </div>
-            ) : products.length === 0 ? (
-              <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center shadow-sm">
-                <p className="text-lg font-bold text-primary mb-2">No Products Found</p>
-                <p className="text-sm text-gray-500 max-w-md mx-auto mb-6">
-                  We couldn't find any products matching your current filters. Try resetting search or checking another category.
-                </p>
-                <button
-                  onClick={() => {
-                    setSearch('')
-                    handleCategoryChange('all')
-                  }}
-                  className="btn-primary"
-                >
-                  Clear Filters
+            )}
+          </div>
+
+          <select value={category} onChange={event => setCategory(event.target.value)} className="h-11 rounded-md border border-zinc-200 bg-white px-3 text-sm font-semibold text-primary">
+            <option value="all">All categories</option>
+            {categories.map(item => <option key={item.slug} value={item.slug}>{item.name}</option>)}
+          </select>
+
+          <select value={availability} onChange={event => setAvailability(event.target.value)} className="h-11 rounded-md border border-zinc-200 bg-white px-3 text-sm font-semibold text-primary">
+            <option value="all">All availability</option>
+            <option value="in_stock">In stock</option>
+            <option value="limited">Limited</option>
+            <option value="on_order">On order</option>
+            <option value="out_of_stock">Out of stock</option>
+          </select>
+
+          <select value={sort} onChange={event => setSort(event.target.value)} className="h-11 rounded-md border border-zinc-200 bg-white px-3 text-sm font-semibold text-primary">
+            {sortOptions.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
+          </select>
+        </div>
+
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2 text-sm font-bold text-zinc-600">
+            <Filter size={16} className="text-accent" />
+            {loading ? 'Loading catalog...' : `${products.length} products shown`}
+          </div>
+          <button type="button" onClick={clearFilters} className="inline-flex items-center gap-2 rounded-md border border-zinc-200 bg-white px-3 py-2 text-xs font-bold text-primary hover:border-accent">
+            <SlidersHorizontal size={14} />
+            Reset filters
+          </button>
+        </div>
+
+        {loading ? (
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4 lg:gap-5">
+            {Array.from({ length: 8 }).map((_, index) => <div key={index} className="h-[430px] animate-pulse rounded-lg border border-zinc-200 bg-white" />)}
+          </div>
+        ) : products.length ? (
+          <>
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4 lg:gap-5">
+              {products.map(product => <ProductCard key={product.id} product={product} />)}
+            </div>
+            {hasMore && (
+              <div className="mt-8 text-center">
+                <button type="button" onClick={loadMore} className="rounded-md bg-primary px-6 py-3 text-sm font-black text-white hover:bg-primary-600">
+                  Load More Products
                 </button>
               </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {products.map(product => {
-                  const labelObj = AVAILABILITY_LABELS[product.availability] || { label: 'In Stock', color: 'text-green-600 bg-green-50' }
-                  return (
-                    <article key={product.id} className="card-hover bg-white flex flex-col justify-between group">
-                      <div className="p-6">
-                        <div className="flex items-center justify-between mb-4">
-                          <span className="text-[10px] font-bold text-accent bg-accent/5 px-2.5 py-1 rounded-md uppercase tracking-wider">
-                            {product.category_name}
-                          </span>
-                          <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-md ${labelObj.color}`}>
-                            {labelObj.label}
-                          </span>
-                        </div>
-
-                        <h3 className="text-lg font-bold text-primary mb-2 line-clamp-1 group-hover:text-accent transition-colors">
-                          {product.name}
-                        </h3>
-                        <p className="text-sm text-gray-500 line-clamp-3 leading-relaxed mb-6">
-                          {product.short_description}
-                        </p>
-
-                        <div className="space-y-1.5 border-t border-gray-100 pt-4">
-                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                            Regions Available:
-                          </p>
-                          <div className="flex flex-wrap gap-1">
-                            {product.regions_available.map(reg => (
-                              <span
-                                key={reg}
-                                className="text-[10px] font-medium text-gray-600 bg-gray-100 px-2 py-0.5 rounded"
-                              >
-                                {reg}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="border-t border-gray-100 bg-gray-50/50 p-4 flex gap-2">
-                        <Link
-                          href={`/products/${product.slug}`}
-                          className="flex-1 btn bg-primary hover:bg-primary-600 text-white text-xs py-2.5 rounded-lg font-semibold flex items-center justify-center gap-1.5"
-                        >
-                          <Eye size={14} />
-                          Details
-                        </Link>
-                        <Link
-                          href={`/contact?type=quote&product=${encodeURIComponent(product.name)}`}
-                          className="flex-1 btn bg-accent hover:bg-accent-500 text-white text-xs py-2.5 rounded-lg font-semibold flex items-center justify-center gap-1.5 animate-pulse-glow"
-                        >
-                          <ShoppingBag size={14} />
-                          Quote
-                        </Link>
-                      </div>
-                    </article>
-                  )
-                })}
-              </div>
             )}
-          </main>
-        </div>
+          </>
+        ) : (
+          <div className="rounded-lg border border-zinc-200 bg-white p-10 text-center shadow-sm">
+            <p className="text-xl font-black text-primary">No products found</p>
+            <p className="mx-auto mt-2 max-w-md text-sm text-zinc-500">Try another keyword, category, application, or availability filter.</p>
+            <button type="button" onClick={clearFilters} className="mt-5 rounded-md bg-accent px-5 py-3 text-sm font-black text-white">Clear Filters</button>
+          </div>
+        )}
+
+        {!!categories.length && (
+          <section className="mt-12">
+            <h2 className="text-2xl font-black text-primary">Category Catalogs</h2>
+            <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {categories.map(item => (
+                <Link key={item.slug} href={`/products/category/${item.slug}`} className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm transition hover:border-accent hover:shadow-lg">
+                  <span className="text-xs font-black uppercase tracking-widest text-accent">{item.product_count} products</span>
+                  <h3 className="mt-2 text-lg font-black text-primary">{item.name}</h3>
+                  <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-zinc-500">{item.description || `Browse ${item.name} chemicals supplied by Zenco Chemicals Ltd.`}</p>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
       </div>
     </div>
   )
@@ -338,11 +236,7 @@ function ProductsContent() {
 
 export default function ProductsPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-surface flex items-center justify-center">
-        <div className="animate-spin text-accent text-3xl">⚗</div>
-      </div>
-    }>
+    <Suspense fallback={<div className="min-h-screen bg-zinc-50" />}>
       <ProductsContent />
     </Suspense>
   )

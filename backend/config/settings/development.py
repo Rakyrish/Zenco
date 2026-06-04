@@ -3,13 +3,8 @@ from .base import *
 DEBUG = True
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0']
 
-# Use SQLite for quick local dev (override to PostgreSQL if needed)
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
-}
+# Development uses the PostgreSQL configuration from base.py.
+# Configure DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, and DB_PORT in .env.
 
 # Simple in-memory cache for dev
 CACHES = {

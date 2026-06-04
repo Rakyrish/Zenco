@@ -1,284 +1,259 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ShieldCheck, MailOpen, User, Phone, CheckCircle, Clock, Trash2, ArrowRight, LogOut, Loader2, MessageCircle } from 'lucide-react'
+import {
+  Package, FileText, MessageSquare, ShoppingCart, Bot, AlertTriangle,
+  TrendingUp, Clock, CheckCircle, Plus, ArrowRight, RefreshCw,
+} from 'lucide-react'
+import StatsCard from '@/components/admin/ui/StatsCard'
+import StatusBadge from '@/components/admin/ui/StatusBadge'
+import { LineChart } from '@/components/admin/charts/Charts'
+import { getAnalyticsOverview, getChatbotConversations, getDashboardStats, getInventory, getAdminInquiries } from '@/lib/admin/api'
+import type { AnalyticsOverview, ChatbotConversation, DashboardStats, InventoryItem, AdminInquiry } from '@/lib/admin/types'
 
-interface Inquiry {
-  id: string
-  full_name: string
-  email: string
-  phone: string | null
-  company: string | null
-  country: string
-  inquiry_type: string
-  product_interest: string | null
-  quantity: string | null
-  message: string
-  status: 'new' | 'read' | 'processing' | 'resolved'
-  created_at: string
+function timeAgo(iso: string) {
+  const diff = Date.now() - new Date(iso).getTime()
+  const m = Math.floor(diff / 60000)
+  if (m < 1) return 'Just now'
+  if (m < 60) return `${m}m ago`
+  const h = Math.floor(m / 60)
+  if (h < 24) return `${h}h ago`
+  return `${Math.floor(h / 24)}d ago`
 }
 
 export default function AdminDashboardPage() {
-  const router = useRouter()
-  const [inquiries, setInquiries] = useState<Inquiry[]>([])
+  const [stats, setStats] = useState<DashboardStats>({
+    total_products: 0, total_blog_posts: 0, total_inquiries: 0, total_quotes: 0,
+    total_chatbot_chats: 0, low_stock_alerts: 0, new_inquiries_today: 0, resolved_today: 0,
+  })
+  const [analytics, setAnalytics] = useState<AnalyticsOverview | null>(null)
+  const [inventory, setInventory] = useState<InventoryItem[]>([])
+  const [inquiries, setInquiries] = useState<AdminInquiry[]>([])
+  const [chats, setChats] = useState<ChatbotConversation[]>([])
   const [loading, setLoading] = useState(true)
-  const [updatingId, setUpdatingId] = useState<string | null>(null)
+  const [refreshing, setRefreshing] = useState(false)
 
-  const mockInquiries: Inquiry[] = [
-    {
-      id: 'inq-1',
-      full_name: 'John Kamau',
-      email: 'j.kamau@finstar.com',
-      phone: '+254711223344',
-      company: 'Finstar Systems',
-      country: 'Kenya',
-      inquiry_type: 'quote',
-      product_interest: 'Sodium Hypochlorite 15%',
-      quantity: '5,000 Liters',
-      message: 'Looking for bulk supply deliveries weekly to our Nairobi plant.',
-      status: 'new',
-      created_at: new Date(Date.now() - 3600000).toISOString(),
-    },
-    {
-      id: 'inq-2',
-      full_name: 'Alice Wambua',
-      email: 'wambua@safewater.org',
-      phone: '+254722334455',
-      company: 'Safe Water Org',
-      country: 'Kenya',
-      inquiry_type: 'technical',
-      product_interest: 'Liquid Chlorine',
-      quantity: '10 IBCs',
-      message: 'Need full specification sheet and certificate of analysis (CoA) for liquid chlorine consignment.',
-      status: 'processing',
-      created_at: new Date(Date.now() - 86400000).toISOString(),
-    },
-    {
-      id: 'inq-3',
-      full_name: 'Robert Mwangi',
-      email: 'robert@mwangicoatings.co.ke',
-      phone: '+254733445566',
-      company: 'Mwangi Coatings Ltd',
-      country: 'Kenya',
-      inquiry_type: 'general',
-      product_interest: 'Industrial Toluene',
-      quantity: '2,000 Liters',
-      message: 'Inquiring about credit terms for solvent supplies.',
-      status: 'resolved',
-      created_at: new Date(Date.now() - 172800000).toISOString(),
-    },
-  ]
-
-  useEffect(() => {
-    // Check Authentication
-    const token = localStorage.getItem('zenco_access')
-    if (!token) {
-      router.push('/admin/login')
-      return
-    }
-
-    // Load Inquiries
-    async function loadInquiries() {
-      try {
-        const res = await fetch('/api/inquiries/', {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        })
-        if (!res.ok) throw new Error('Failed to fetch from API')
-        const data = await res.json()
-        setInquiries(data.results.length ? data.results : mockInquiries)
-      } catch (err) {
-        console.warn('Inquiry fetch failed, using mock dashboard fallback.', err)
-        setInquiries(mockInquiries)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    loadInquiries()
-  }, [])
-
-  const handleUpdateStatus = async (id: string, newStatus: 'read' | 'processing' | 'resolved') => {
-    setUpdatingId(id)
-    const token = localStorage.getItem('zenco_access')
+  const loadStats = async () => {
     try {
-      const res = await fetch(`/api/inquiries/${id}/`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ status: newStatus }),
-      })
-      if (!res.ok) throw new Error()
-      
-      setInquiries(prev => prev.map(inq => inq.id === id ? { ...inq, status: newStatus } : inq))
+      const data = await getDashboardStats()
+      setStats(data)
+      const [traffic, stock, recentInquiries, recentChats] = await Promise.all([
+        getAnalyticsOverview('30d').catch(() => null),
+        getInventory({ low_stock: true }).catch(() => ({ results: [] })),
+        getAdminInquiries({ page: 1 }).catch(() => ({ results: [] })),
+        getChatbotConversations({ page: 1 }).catch(() => ({ results: [] })),
+      ])
+      setAnalytics(traffic)
+      setInventory(stock.results)
+      setInquiries(recentInquiries.results.slice(0, 4))
+      setChats(recentChats.results.slice(0, 3))
     } catch {
-      // Local Mock Update
-      setInquiries(prev => prev.map(inq => inq.id === id ? { ...inq, status: newStatus } : inq))
     } finally {
-      setUpdatingId(null)
+      setLoading(false)
+      setRefreshing(false)
     }
   }
 
-  const handleLogout = () => {
-    localStorage.removeItem('zenco_access')
-    localStorage.removeItem('zenco_refresh')
-    router.push('/admin/login')
-  }
+  useEffect(() => { loadStats() }, [])
 
-  const getStatusPill = (status: string) => {
-    switch (status) {
-      case 'new':
-        return 'bg-red-50 text-red-700 border-red-200'
-      case 'processing':
-        return 'bg-amber-50 text-amber-700 border-amber-200'
-      case 'resolved':
-        return 'bg-green-50 text-green-700 border-green-200'
-      default:
-        return 'bg-gray-50 text-gray-700 border-gray-200'
-    }
-  }
+  const handleRefresh = () => { setRefreshing(true); loadStats() }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-surface flex items-center justify-center">
-        <Loader2 size={32} className="animate-spin text-accent" />
-      </div>
-    )
-  }
+  const trafficData = (analytics?.traffic_by_day || []).slice(-14).map(d => ({
+    date: d.date,
+    value: d.visitors,
+  }))
+
+  const lowStock = inventory
+  const recentInquiries = inquiries
+  const recentChats = chats
 
   return (
-    <div className="min-h-screen bg-surface py-12">
-      <div className="container-xl px-4">
-        {/* Header Block */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-10 border-b border-gray-100 pb-6">
-          <div>
-            <h1 className="text-3xl font-extrabold text-primary flex items-center gap-2">
-              <ShieldCheck className="text-accent" />
-              Zenco Admin Dashboard
-            </h1>
-            <p className="text-sm text-gray-500">Manage chemical inquiries, client leads, and system analytics.</p>
-          </div>
+    <div className="space-y-6 max-w-[1600px]">
+      {/* Page header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-extrabold text-gray-900 dark:text-white">Dashboard</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Welcome back — here&apos;s what&apos;s happening at Zenco.</p>
+        </div>
+        <div className="flex items-center gap-3">
           <button
-            onClick={handleLogout}
-            className="btn bg-white hover:bg-red-50 hover:text-red-700 text-gray-600 border border-gray-100 flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm"
+            onClick={handleRefresh}
+            className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 px-3 py-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
           >
-            <LogOut size={16} />
-            Log Out
+            <RefreshCw size={14} className={refreshing ? 'animate-spin' : ''} />
+            Refresh
           </button>
+          <Link
+            href="/admin/products/new"
+            className="flex items-center gap-2 bg-[#0C094D] hover:bg-[#1a1760] text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors"
+          >
+            <Plus size={16} /> Add Product
+          </Link>
+        </div>
+      </div>
+
+      {/* Stats Grid */}
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
+        <StatsCard loading={loading} label="Total Products" value={stats.total_products} icon={<Package size={18} />} color="blue" trend={{ value: 5, label: 'vs last month' }} />
+        <StatsCard loading={loading} label="Blog Posts" value={stats.total_blog_posts} icon={<FileText size={18} />} color="purple" />
+        <StatsCard loading={loading} label="Inquiries" value={stats.total_inquiries} icon={<MessageSquare size={18} />} color="green" trend={{ value: 12 }} />
+        <StatsCard loading={loading} label="Quote Requests" value={stats.total_quotes} icon={<ShoppingCart size={18} />} color="orange" />
+        <StatsCard loading={loading} label="Chatbot Chats" value={stats.total_chatbot_chats} icon={<Bot size={18} />} color="amber" />
+        <StatsCard loading={loading} label="Low Stock Items" value={stats.low_stock_alerts} icon={<AlertTriangle size={18} />} color="red" />
+      </div>
+
+      {/* Today's summary */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        {[
+          { label: 'New Today', value: stats.new_inquiries_today, icon: <TrendingUp size={14} />, color: 'text-green-600 bg-green-50 dark:bg-green-900/20' },
+          { label: 'Resolved Today', value: stats.resolved_today, icon: <CheckCircle size={14} />, color: 'text-blue-600 bg-blue-50 dark:bg-blue-900/20' },
+          { label: 'Avg Response', value: '2.4h', icon: <Clock size={14} />, color: 'text-amber-600 bg-amber-50 dark:bg-amber-900/20' },
+          { label: 'Open Chats', value: chats.filter(c => !c.is_resolved).length, icon: <Bot size={14} />, color: 'text-purple-600 bg-purple-50 dark:bg-purple-900/20' },
+        ].map((s, i) => (
+          <div key={i} className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-4 flex items-center gap-3">
+            <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${s.color}`}>{s.icon}</div>
+            <div>
+              <p className="text-lg font-extrabold text-gray-900 dark:text-white">{s.value}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">{s.label}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Main grid — traffic + low stock */}
+      <div className="grid lg:grid-cols-3 gap-6">
+        {/* Traffic Chart */}
+        <div className="lg:col-span-2 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="font-bold text-gray-900 dark:text-white text-sm">Website Traffic</h2>
+              <p className="text-xs text-gray-400 mt-0.5">Visitors over the last 14 days</p>
+            </div>
+            <div className="text-right">
+              <p className="text-xl font-extrabold text-gray-900 dark:text-white">{(analytics?.total_visitors || 0).toLocaleString()}</p>
+              <p className="text-xs text-green-600 font-semibold">+8.3% this month</p>
+            </div>
+          </div>
+          <LineChart data={trafficData} color="#F26C0C" height={130} showDots={false} />
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-          <div className="bg-white rounded-3xl border border-gray-100 p-6 shadow-card flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center flex-shrink-0">
-              <Clock size={22} />
-            </div>
-            <div>
-              <p className="text-2xl font-extrabold text-primary">{inquiries.filter(i => i.status === 'new').length}</p>
-              <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider">Unread Inquiries</p>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-3xl border border-gray-100 p-6 shadow-card flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center flex-shrink-0">
-              <Loader2 size={22} className="animate-spin" />
-            </div>
-            <div>
-              <p className="text-2xl font-extrabold text-primary">{inquiries.filter(i => i.status === 'processing').length}</p>
-              <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider">Processing Cases</p>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-3xl border border-gray-100 p-6 shadow-card flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-green-50 text-green-600 flex items-center justify-center flex-shrink-0">
-              <CheckCircle size={22} />
-            </div>
-            <div>
-              <p className="text-2xl font-extrabold text-primary">{inquiries.filter(i => i.status === 'resolved').length}</p>
-              <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider">Resolved Tickets</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Lead Table */}
-        <div className="bg-white rounded-3xl border border-gray-100 shadow-card overflow-hidden">
-          <div className="p-6 border-b border-gray-100 flex justify-between items-center">
-            <h2 className="text-lg font-bold text-primary flex items-center gap-2">
-              <MailOpen size={18} className="text-accent" />
-              Recent Inquiries & Quotes
+        {/* Low Stock Alerts */}
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-bold text-gray-900 dark:text-white text-sm flex items-center gap-2">
+              <AlertTriangle size={15} className="text-red-500" /> Low Stock Alerts
             </h2>
+            <Link href="/admin/inventory" className="text-xs text-[#F26C0C] hover:underline font-semibold">View all</Link>
           </div>
+          <div className="space-y-2.5">
+            {lowStock.map(item => (
+              <div key={item.id} className="flex items-center justify-between gap-2 p-3 bg-red-50/50 dark:bg-red-900/10 rounded-xl border border-red-100 dark:border-red-900/30">
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-gray-800 dark:text-gray-200 truncate">{item.product_name}</p>
+                  <p className="text-[10px] text-gray-400">{item.category_name}</p>
+                </div>
+                <div className="text-right flex-shrink-0">
+                  <p className={`text-sm font-extrabold ${item.stock_quantity === 0 ? 'text-red-600' : 'text-amber-600'}`}>
+                    {item.stock_quantity} {item.unit}
+                  </p>
+                  <p className="text-[10px] text-gray-400">Min: {item.reorder_level}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-gray-50/50 border-b border-gray-100 text-xs font-bold text-gray-400 uppercase tracking-wider">
-                  <th className="p-6">Client</th>
-                  <th className="p-6">Inquiry Details</th>
-                  <th className="p-6">Status</th>
-                  <th className="p-6 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50 text-sm">
-                {inquiries.map(inq => (
-                  <tr key={inq.id} className="hover:bg-gray-50/40 transition-colors">
-                    <td className="p-6 space-y-1">
-                      <p className="font-bold text-primary flex items-center gap-1.5">
-                        <User size={13} className="text-accent" />
-                        {inq.full_name}
-                      </p>
-                      {inq.company && <p className="text-xs text-gray-400 font-medium">{inq.company} ({inq.country})</p>}
-                      <div className="flex gap-3 text-xs text-gray-500 pt-1">
-                        <span className="flex items-center gap-1"><MailOpen size={11} />{inq.email}</span>
-                        {inq.phone && <span className="flex items-center gap-1"><Phone size={11} />{inq.phone}</span>}
-                      </div>
-                    </td>
-                    <td className="p-6 space-y-1 max-w-sm">
-                      <p className="text-xs font-bold text-accent uppercase tracking-wider bg-accent/5 px-2 py-0.5 rounded-md inline-block">
-                        {inq.inquiry_type}
-                      </p>
-                      {inq.product_interest && (
-                        <p className="text-xs text-primary font-bold pt-1">
-                          Product: {inq.product_interest} &nbsp;|&nbsp; Qty: {inq.quantity || 'N/A'}
-                        </p>
-                      )}
-                      <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed">{inq.message}</p>
-                    </td>
-                    <td className="p-6">
-                      <span className={`px-2.5 py-1 border text-xs font-semibold rounded-full ${getStatusPill(inq.status)}`}>
-                        {inq.status}
-                      </span>
-                    </td>
-                    <td className="p-6 text-right space-x-2 whitespace-nowrap">
-                      {inq.status !== 'processing' && inq.status !== 'resolved' && (
-                        <button
-                          disabled={updatingId === inq.id}
-                          onClick={() => handleUpdateStatus(inq.id, 'processing')}
-                          className="text-xs font-semibold text-amber-600 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-3 py-1.5 rounded-lg transition-colors"
-                        >
-                          Process
-                        </button>
-                      )}
-                      {inq.status !== 'resolved' && (
-                        <button
-                          disabled={updatingId === inq.id}
-                          onClick={() => handleUpdateStatus(inq.id, 'resolved')}
-                          className="text-xs font-semibold text-green-600 bg-green-50 hover:bg-green-100 border border-green-200 px-3 py-1.5 rounded-lg transition-colors"
-                        >
-                          Resolve
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      {/* Bottom grid — recent inquiries + chatbot */}
+      <div className="grid lg:grid-cols-2 gap-6">
+        {/* Recent Inquiries */}
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800">
+            <h2 className="font-bold text-gray-900 dark:text-white text-sm">Recent Inquiries</h2>
+            <Link href="/admin/inquiries" className="flex items-center gap-1 text-xs text-[#F26C0C] hover:underline font-semibold">
+              View all <ArrowRight size={12} />
+            </Link>
           </div>
+          <div className="divide-y divide-gray-50 dark:divide-gray-800">
+            {recentInquiries.map(inq => (
+              <div key={inq.id} className="flex items-start gap-3 px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                <div className="w-8 h-8 rounded-full bg-[#0C094D]/10 dark:bg-white/10 flex items-center justify-center flex-shrink-0 text-xs font-bold text-[#0C094D] dark:text-white">
+                  {inq.full_name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 truncate">{inq.full_name}</p>
+                    <span className="text-[10px] text-gray-400 flex-shrink-0">{timeAgo(inq.created_at)}</span>
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">{inq.message}</p>
+                  <div className="flex items-center gap-2 mt-1.5">
+                    <StatusBadge status={inq.status} />
+                    <span className="text-[10px] text-gray-400 uppercase tracking-wider">{inq.inquiry_type}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="px-6 py-3 border-t border-gray-50 dark:border-gray-800">
+            <Link href="/admin/inquiries" className="text-xs text-gray-500 hover:text-[#F26C0C] transition-colors">
+              View all {stats.total_inquiries} inquiries →
+            </Link>
+          </div>
+        </div>
+
+        {/* Recent Chatbot Conversations */}
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800">
+            <h2 className="font-bold text-gray-900 dark:text-white text-sm flex items-center gap-2">
+              <Bot size={15} className="text-[#F26C0C]" /> Chatbot Conversations
+            </h2>
+            <Link href="/admin/chatbot" className="flex items-center gap-1 text-xs text-[#F26C0C] hover:underline font-semibold">
+              Monitor <ArrowRight size={12} />
+            </Link>
+          </div>
+          <div className="divide-y divide-gray-50 dark:divide-gray-800">
+            {recentChats.map(chat => (
+              <div key={chat.id} className="px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                <div className="flex items-center justify-between gap-2 mb-1.5">
+                  <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 truncate">
+                    {chat.user_identifier || 'Anonymous visitor'}
+                  </span>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <StatusBadge status={chat.is_resolved ? 'resolved' : 'new'} />
+                    <span className="text-[10px] text-gray-400">{timeAgo(chat.last_message_at)}</span>
+                  </div>
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{chat.first_message}</p>
+                <p className="text-[10px] text-gray-400 mt-1">{chat.message_count} messages</p>
+              </div>
+            ))}
+          </div>
+          <div className="px-6 py-3 border-t border-gray-50 dark:border-gray-800">
+            <Link href="/admin/chatbot" className="text-xs text-gray-500 hover:text-[#F26C0C] transition-colors">
+              View all {stats.total_chatbot_chats} conversations →
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-6 shadow-sm">
+        <h2 className="font-bold text-gray-900 dark:text-white text-sm mb-4">Quick Actions</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+          {[
+            { label: 'Add Product', href: '/admin/products/new', icon: <Package size={18} />, color: 'text-blue-600 bg-blue-50 dark:bg-blue-900/20' },
+            { label: 'Write Post', href: '/admin/blog/new', icon: <FileText size={18} />, color: 'text-purple-600 bg-purple-50 dark:bg-purple-900/20' },
+            { label: 'View Inquiries', href: '/admin/inquiries', icon: <MessageSquare size={18} />, color: 'text-green-600 bg-green-50 dark:bg-green-900/20' },
+            { label: 'View Quotes', href: '/admin/quotes', icon: <ShoppingCart size={18} />, color: 'text-orange-600 bg-orange-50 dark:bg-orange-900/20' },
+            { label: 'Analytics', href: '/admin/analytics', icon: <TrendingUp size={18} />, color: 'text-amber-600 bg-amber-50 dark:bg-amber-900/20' },
+            { label: 'Inventory', href: '/admin/inventory', icon: <AlertTriangle size={18} />, color: 'text-red-600 bg-red-50 dark:bg-red-900/20' },
+          ].map((a, i) => (
+            <Link key={i} href={a.href} className="flex flex-col items-center gap-2 p-4 rounded-xl border border-gray-100 dark:border-gray-800 hover:border-gray-200 dark:hover:border-gray-700 hover:shadow-sm transition-all group">
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${a.color} group-hover:scale-110 transition-transform`}>{a.icon}</div>
+              <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 text-center leading-tight">{a.label}</span>
+            </Link>
+          ))}
         </div>
       </div>
     </div>

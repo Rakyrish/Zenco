@@ -1,5 +1,6 @@
 import { type ClassValue, clsx } from 'clsx'
 import { twMerge } from 'tailwind-merge'
+import { appConfig } from '@/lib/config'
 
 /** Merge Tailwind class names safely */
 export function cn(...inputs: ClassValue[]) {
@@ -37,8 +38,8 @@ export function getInitials(name: string): string {
 export function mediaUrl(path: string | null | undefined): string {
   if (!path) return '/images/placeholder.jpg'
   if (path.startsWith('http')) return path
-  const base = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:8000'
-  return `${base}${path}`
+  const base = appConfig.apiUrl.replace(/\/api\/?$/, '')
+  return `${base}${path.startsWith('/') ? path : `/${path}`}`
 }
 
 /** Format number with locale */
