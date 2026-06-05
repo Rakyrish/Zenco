@@ -45,7 +45,7 @@ function ContactContent() {
     defaultValues: {
       inquiry_type: initialType,
       product_interest: initialProduct,
-      country: 'Kenya',
+      country: SITE_CONFIG.address.country,
     },
   })
 
@@ -152,13 +152,23 @@ function ContactContent() {
 
             {/* Google Map Embed */}
             <div className="bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-card aspect-video relative">
-              <iframe
-                title="Zenco Systems Ltd Depot Location"
-                src={SITE_CONFIG.mapEmbed}
-                className="absolute inset-0 w-full h-full border-none"
-                allowFullScreen
-                loading="lazy"
-              />
+              {SITE_CONFIG.mapEmbed ? (
+                <iframe
+                  title={`${SITE_CONFIG.name} Depot Location`}
+                  src={SITE_CONFIG.mapEmbed}
+                  className="absolute inset-0 w-full h-full border-none"
+                  allowFullScreen
+                  loading="lazy"
+                />
+              ) : (
+                <div className="flex h-full min-h-48 flex-col items-center justify-center p-6 text-center">
+                  <MapPin size={28} className="text-accent" />
+                  <p className="mt-3 text-sm font-bold text-primary">{SITE_CONFIG.address.city || 'Main office'}</p>
+                  <p className="mt-1 text-xs leading-relaxed text-gray-500">
+                    {SITE_CONFIG.address.street}, {SITE_CONFIG.address.country}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 

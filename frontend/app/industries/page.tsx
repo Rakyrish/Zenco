@@ -2,51 +2,26 @@
 
 import Link from 'next/link'
 import { ArrowRight, Factory, Droplets, UtensilsCrossed, Pill, Sprout, Paintbrush, Shirt, Zap, CheckCircle } from 'lucide-react'
+import { SITE_CONFIG } from '@/lib/constants'
+import { INDUSTRY_PAGES } from '@/lib/navigation-content'
 
-const industries = [
-  {
-    icon: Factory,
-    title: 'Manufacturing & Heavy Industry',
-    tagline: 'Basic raw materials, solvents, acids, and process chemicals.',
-    desc: 'Supporting general manufacturing processes with volume supplies of essential raw materials, specialized solvents, reaction acids, pH buffers, and process catalysts.',
-    solutions: ['Sulfuric Acid supply', 'Industrial solvents', 'Diluent blending', 'Effluent management'],
-  },
-  {
-    icon: Droplets,
-    title: 'Water Treatment & Purification',
-    tagline: 'Municipal filtration, cooling systems, and effluent treatment.',
-    desc: 'Delivering flocculants, coagulants, chlorination compounds, and scaling inhibitors to municipalities, water boards, power systems, and manufacturing sites.',
-    solutions: ['Aluminum Sulfate', 'Sodium Hypochlorite', 'Polyelectrolytes', 'Descaling agents'],
-  },
-  {
-    icon: UtensilsCrossed,
-    title: 'Food Processing & Dairies',
-    tagline: 'Food-grade sanitizers, additives, and CIP chemicals.',
-    desc: 'Securing food-grade chemical sanitizers, preservative agents, clean-in-place (CIP) formulations, and chemical additives matching international food-safety norms.',
-    solutions: ['Nitric Acid CIP grade', 'Caustic Soda micropearls', 'Hydrogen Peroxide food-grade', 'Preservative agents'],
-  },
-  {
-    icon: Pill,
-    title: 'Pharmaceuticals & Cosmetics',
-    tagline: 'High-purity solvents, base oils, and raw ingredients.',
-    desc: 'Supplying USP/BP grade inputs, active cosmetic bases, high-purity isopropyl alcohol, mineral oils, and stabilizers to regional pharma and cosmetic manufacturers.',
-    solutions: ['Isopropyl Alcohol 99.9%', 'Glycerin USP grade', 'Propylene Glycol USP', 'Preservatives & Emulsifiers'],
-  },
-  {
-    icon: Sprout,
-    title: 'Agriculture & Horticulture',
-    tagline: 'Fertilizer raw materials, pest control, and adjuvants.',
-    desc: 'Delivering chemical bases for fertilizer production, foliar nutrients, wetting agents, greenhouse sanitation inputs, and agricultural spray adjuvants.',
-    solutions: ['Phosphoric Acid foliar', 'Potassium Nitrate', 'Wetting agents', 'Greenhouse sanitizers'],
-  },
-  {
-    icon: Paintbrush,
-    title: 'Paints, Inks & Coatings',
-    tagline: 'Solvents, binders, titanium dioxide, and thickeners.',
-    desc: 'Supplying paint manufacturers with key solvents (Toluene, Ethyl Acetate, Xylene), organic binders, rheology modifiers, and pigment extenders.',
-    solutions: ['Ethyl Acetate solvent', 'Xylene standard', 'Rheology thickeners', 'Antifoam agents'],
-  },
-]
+const iconBySlug = {
+  manufacturing: Factory,
+  'water-treatment': Droplets,
+  'food-processing': UtensilsCrossed,
+  agriculture: Sprout,
+  hospitality: Shirt,
+  healthcare: Pill,
+  construction: Zap,
+  pharmaceuticals: Pill,
+  'paints-coatings': Paintbrush,
+} as const
+
+const industries = INDUSTRY_PAGES.map(industry => ({
+  ...industry,
+  desc: industry.description,
+  icon: iconBySlug[industry.slug as keyof typeof iconBySlug] || Factory,
+}))
 
 export default function IndustriesPage() {
   return (
@@ -57,7 +32,7 @@ export default function IndustriesPage() {
           <span className="section-tag">Target Sectors</span>
           <h1 className="text-3xl md:text-5xl font-bold text-primary mb-3">Industries We Serve</h1>
           <p className="text-gray-500 leading-relaxed">
-            Zenco Systems Ltd supplies raw chemical solutions and engineering support customized to meet the strict quality benchmarks of diverse regional sectors.
+            {SITE_CONFIG.name} supplies raw chemical solutions and engineering support customized to meet the strict quality benchmarks of diverse regional sectors.
           </p>
         </div>
 
@@ -95,10 +70,10 @@ export default function IndustriesPage() {
                 </div>
 
                 <Link
-                  href={`/contact?type=quote&industry=${encodeURIComponent(ind.title)}`}
+                  href={`/industries/${ind.slug}`}
                   className="inline-flex items-center gap-1.5 text-xs font-bold text-primary group-hover:text-accent transition-colors"
                 >
-                  Consult an Expert
+                  View Industry Solutions
                   <ArrowRight size={12} className="transition-transform group-hover:translate-x-0.5" />
                 </Link>
               </div>

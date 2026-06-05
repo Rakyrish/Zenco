@@ -3,34 +3,47 @@ import { appConfig } from '@/lib/config'
 // ─── Zenco Systems Constants ──────────────────────────────────────────────
 
 export const SITE_CONFIG = {
-  name: 'Zenco Systems Ltd',
-  division: 'Chemical Division',
-  fullName: 'Zenco Systems Ltd – Chemical Division',
-  tagline: 'Industrial Chemical Solutions for East Africa',
-  description:
-    'Zenco Systems Ltd is a trusted supplier of industrial chemicals, water treatment chemicals, solvents, and specialty chemicals across Kenya and East Africa.',
+  name: appConfig.companyName,
+  division: appConfig.companyDivision,
+  fullName: appConfig.companyFullName || [appConfig.companyName, appConfig.companyDivision].filter(Boolean).join(' - '),
+  tagline: appConfig.companyTagline,
+  description: appConfig.companyDescription,
   url: appConfig.siteUrl,
   apiUrl: appConfig.apiUrl,
   email: appConfig.companyEmail,
   phone: appConfig.phoneNumber,
   whatsapp: appConfig.whatsappNumber,
   address: {
-    street: 'Industrial Area, Enterprise Road, KCB Building',
-    city: 'Nairobi',
-    country: 'Kenya',
-    postalCode: '00400',
+    street: appConfig.streetAddress,
+    city: appConfig.city,
+    country: appConfig.country,
+    postalCode: appConfig.postalCode,
   },
   social: {
-    linkedin: 'https://www.linkedin.com/in/zenco-systems-ltd-368245366',
-    instagram: 'https://www.instagram.com/zencosystemsltd?igsh=aHJoZjIzNjF1czQy',
-    facebook: 'https://www.facebook.com/profile.php?id=61584593930779',
-    tiktok: 'https://www.tiktok.com/@zencosystemsltd?_r=1&_t=ZS-96a0tdIdXiK',
-    twitter: '',
+    linkedin: appConfig.linkedinUrl,
+    instagram: appConfig.instagramUrl,
+    facebook: appConfig.facebookUrl,
+    tiktok: appConfig.tiktokUrl,
+    twitter: appConfig.twitterUrl,
 
   },
-  openingHours: 'Mon–Fri: 8:00 AM – 5:00 PM | Sat: 9:00 AM – 1:00 PM',
-  mapEmbed: appConfig.googleMapsEmbedKey
-    ? `https://www.google.com/maps/embed/v1/place?key=${appConfig.googleMapsEmbedKey}&q=Zenco%20Systems%20Ltd%20Nairobi`
+  openingHours: appConfig.openingHours,
+  serviceArea: appConfig.serviceArea,
+  locale: appConfig.locale,
+  timeZone: appConfig.timeZone,
+  currency: appConfig.currency,
+  acceptedCurrencies: appConfig.acceptedCurrencies,
+  coordinates: {
+    latitude: appConfig.latitude,
+    longitude: appConfig.longitude,
+  },
+  twitterHandle: appConfig.twitterHandle,
+  defaultKeywords: appConfig.defaultKeywords
+    .split(',')
+    .map(keyword => keyword.trim())
+    .filter(Boolean),
+  mapEmbed: appConfig.googleMapsEmbedKey && appConfig.googleMapsPlaceQuery
+    ? `https://www.google.com/maps/embed/v1/place?key=${appConfig.googleMapsEmbedKey}&q=${encodeURIComponent(appConfig.googleMapsPlaceQuery)}`
     : '',
 } as const
 
@@ -68,9 +81,7 @@ export const COMPANY_STATS = [
 ] as const
 
 export const CERTIFICATIONS = [
-  'KEBS-aligned quality controls',
-  'ISO 9001:2015 supplier preference',
-  'GMP-aware sourcing standards',
+  'Aware sourcing standards',
   'Safety data sheet documentation',
 ] as const
 
@@ -98,27 +109,30 @@ export const NAV_LINKS = [
     href: '/products',
     hasMega: true,
   },
-  {
-    label: 'Services',
-    href: '/services',
-    children: [
-      { label: 'Chemical Solutions', href: '/services/chemical-solutions' },
-      { label: 'Industrial Systems', href: '/services/industrial-systems' },
-      { label: 'Consultation', href: '/services/consultation' },
-      { label: 'Technical Support', href: '/services/technical-support' },
-    ],
-  },
-  {
-    label: 'Industries',
-    href: '/industries',
-    children: [
-      { label: 'Manufacturing', href: '/industries/manufacturing' },
-      { label: 'Water Treatment', href: '/industries/water-treatment' },
-      { label: 'Food Processing', href: '/industries/food-processing' },
-      { label: 'Pharmaceuticals', href: '/industries/pharmaceuticals' },
-      { label: 'Agriculture', href: '/industries/agriculture' },
-    ],
-  },
+  // {
+  //   label: 'Services',
+  //   href: '/services',
+  //   children: [
+  //     { label: 'Water Treatment', href: '/services/water-treatment' },
+  //     { label: 'Industrial Cleaning', href: '/services/industrial-cleaning' },
+  //     { label: 'Laboratory Solutions', href: '/services/laboratory-solutions' },
+  //     { label: 'Safety Products', href: '/services/safety-products' },
+  //     { label: 'Chemical Supply', href: '/services/chemical-supply' },
+  //   ],
+  // },
+  // {
+  //   label: 'Industries',
+  //   href: '/industries',
+  //   children: [
+  //     { label: 'Manufacturing', href: '/industries/manufacturing' },
+  //     { label: 'Food Processing', href: '/industries/food-processing' },
+  //     { label: 'Water Treatment', href: '/industries/water-treatment' },
+  //     { label: 'Agriculture', href: '/industries/agriculture' },
+  //     { label: 'Hospitality', href: '/industries/hospitality' },
+  //     { label: 'Healthcare', href: '/industries/healthcare' },
+  //     { label: 'Construction', href: '/industries/construction' },
+  //   ],
+  // },
   { label: 'About', href: '/about' },
   { label: 'Blog', href: '/blog' },
   { label: 'Contact', href: '/contact' },

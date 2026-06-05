@@ -176,6 +176,7 @@ export default function Footer() {
             <ul className="space-y-2.5">
               {[
                 { label: 'About Us', href: '/about' },
+                { label: 'Products', href: '/products' },
                 { label: 'Our Services', href: '/services' },
                 { label: 'Industries Served', href: '/industries' },
                 { label: 'Blog & Insights', href: '/blog' },
@@ -234,9 +235,13 @@ export default function Footer() {
       <div className="border-t border-white/10">
         <div className="container-xl px-4 py-5 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-xs text-white/40">
-            © {year} Zenco Systems Ltd – Chemical Division. All rights reserved.
+            © {year} {SITE_CONFIG.fullName}. All rights reserved.
           </p>
-
+          <div className="flex flex-wrap items-center justify-center gap-4 text-xs text-white/45">
+            <Link href="/privacy" className="hover:text-accent transition-colors">Privacy Policy</Link>
+            <Link href="/terms" className="hover:text-accent transition-colors">Terms & Conditions</Link>
+            <a href="/sitemap.xml" className="hover:text-accent transition-colors">Sitemap</a>
+          </div>
         </div>
       </div>
     </footer>

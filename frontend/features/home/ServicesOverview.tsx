@@ -2,33 +2,23 @@
 
 import Link from 'next/link'
 import { ArrowRight, Settings, Truck, HelpCircle, HardHat } from 'lucide-react'
+import { SERVICE_PAGES } from '@/lib/navigation-content'
 
-const services = [
-  {
-    icon: Truck,
-    title: 'Safe Bulk Logistics & Transport',
-    desc: 'Expert logistics handling of hazardous chemicals using certified ADR fleets, customized storage containers, and tracking systems.',
-    href: '/services/bulk-logistics',
-  },
-  {
-    icon: Settings,
-    title: 'Custom Chemical Formulations',
-    desc: 'Tailored chemical blending and dilution services designed by in-house industrial formulation scientists to match precise specs.',
-    href: '/services/custom-formulations',
-  },
-  {
-    icon: HardHat,
-    title: 'On-Site Storage Audit & Training',
-    desc: 'Ensuring absolute safety compliance at your facility with onsite hazardous chemical training, NEMA protocol alignment, and storage audits.',
-    href: '/services/onsite-audits',
-  },
-  {
-    icon: HelpCircle,
-    title: 'Technical Support & Laboratory Testing',
-    desc: 'Providing analytical testing, custom dilution calculations, and application trials inside our modern quality control laboratories.',
-    href: '/services/technical-support',
-  },
-]
+const serviceIcons = {
+  'bulk-logistics': Truck,
+  'custom-formulations': Settings,
+  'onsite-audits': HardHat,
+  'technical-support': HelpCircle,
+} as const
+
+const services = SERVICE_PAGES.filter(service =>
+  ['bulk-logistics', 'custom-formulations', 'onsite-audits', 'technical-support'].includes(service.slug)
+).map(service => ({
+  ...service,
+  desc: service.description,
+  href: `/services/${service.slug}`,
+  icon: serviceIcons[service.slug as keyof typeof serviceIcons] || HelpCircle,
+}))
 
 export default function ServicesOverview() {
   return (

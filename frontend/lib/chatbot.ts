@@ -4,10 +4,32 @@
  * All OpenAI calls go through the backend — NO API keys are exposed here.
  */
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, '') || 'http://localhost:8000/api'
+const API_BASE = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, '') || ''
 const SESSION_KEY = 'zenco_chat_session_id'
 const MESSAGES_KEY = 'zenco_chat_messages'
 const MAX_LOCAL_MESSAGES = 50
+
+export type ChatAction =
+  | 'view_product'
+  | 'request_quote'
+  | 'whatsapp_sales'
+  | 'call_sales'
+  | 'email_sales'
+  | 'notify_me'
+  | 'request_product'
+
+export interface ChatProduct {
+  id: string
+  name: string
+  slug: string
+  category: string
+  category_slug: string
+  short_description: string
+  image: string
+  availability: 'in_stock' | 'limited' | 'out_of_stock' | 'on_order' | string
+  stock_quantity: number
+  packaging: string
+}
 
 export interface ChatMessage {
   id: string
@@ -15,6 +37,10 @@ export interface ChatMessage {
   content: string
   timestamp: number
   escalation_link?: string | null
+  actions?: ChatAction[]
+  products?: ChatProduct[]
+  product_slug?: string
+  product_id?: string
 }
 
 export interface ChatResponse {
@@ -22,6 +48,10 @@ export interface ChatResponse {
   reply: string
   escalation_link: string | null
   lead_intent: boolean
+  actions?: ChatAction[]
+  products?: ChatProduct[]
+  product_slug?: string
+  product_id?: string
 }
 
 // ─── Session helpers ──────────────────────────────────────────────────────────
@@ -97,6 +127,8 @@ export async function sendChatMessage(
         reply: data.reply || 'Too many messages. Please wait a moment and try again.',
         escalation_link: null,
         lead_intent: false,
+        actions: data.actions || [],
+        products: data.products || [],
       }
     }
     throw new Error(`Chat API error: ${res.status}`)
@@ -111,6 +143,7 @@ export function makeMessage(
   role: 'user' | 'assistant',
   content: string,
   escalation_link?: string | null,
+  metadata?: Pick<ChatMessage, 'actions' | 'products' | 'product_slug' | 'product_id'>,
 ): ChatMessage {
   return {
     id: `${role}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
@@ -118,5 +151,6 @@ export function makeMessage(
     content,
     timestamp: Date.now(),
     escalation_link,
+    ...metadata,
   }
 }

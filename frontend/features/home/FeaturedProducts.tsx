@@ -3,10 +3,10 @@ import { ArrowRight, MessageCircle } from 'lucide-react'
 import ProductCard from '@/components/products/ProductCard'
 import { whatsappHref } from '@/components/products/product-helpers'
 import { getCategories, getFeaturedProducts, getProducts } from '@/lib/api'
+import { SITE_CONFIG } from '@/lib/constants'
 import ProductCategoryBrowser, { type CategoryShelf } from './ProductCategoryBrowser'
 
-async function getHomepageShelves(): Promise<CategoryShelf[]> {
-  const categories = await getCategories()
+async function getHomepageShelves(categories: Awaited<ReturnType<typeof getCategories>>): Promise<CategoryShelf[]> {
   const activeCategories = categories
     .filter(category => category.is_active !== false && category.product_count > 0)
     .sort((a, b) => a.sort_order - b.sort_order)
@@ -34,9 +34,10 @@ async function getHomepageShelves(): Promise<CategoryShelf[]> {
 }
 
 export default async function FeaturedProducts() {
+  const categories = await getCategories().catch(() => [])
   const [featuredData, shelves] = await Promise.all([
     getFeaturedProducts().catch(() => []),
-    getHomepageShelves().catch(() => []),
+    getHomepageShelves(categories).catch(() => []),
   ])
   const featured = featuredData.slice(0, 8)
 
@@ -48,7 +49,7 @@ export default async function FeaturedProducts() {
             <span className="section-tag">Featured Products</span>
             <h2 className="section-title">Industrial Product Catalog</h2>
             <p className="section-subtitle mt-2 max-w-3xl">
-              Browse Zenco Chemicals Ltd products by category, compare availability quickly, and reach sales for fast quotation support.
+              Browse {SITE_CONFIG.name} products by category, compare availability quickly, and reach sales for fast quotation support.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -78,7 +79,7 @@ export default async function FeaturedProducts() {
           </div>
         )} */}
 
-        <ProductCategoryBrowser shelves={shelves} />
+        <ProductCategoryBrowser categories={categories} shelves={shelves} />
       </div>
     </section>
   )

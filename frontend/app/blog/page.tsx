@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Calendar, User, Clock, Search, BookOpen } from 'lucide-react'
 import { getBlogPosts } from '@/lib/api'
+import { SITE_CONFIG } from '@/lib/constants'
 import type { BlogPost } from '@/types'
 import { formatDate } from '@/lib/utils'
 
@@ -38,10 +39,10 @@ export default function BlogListingPage() {
       <div className="container-xl px-4">
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <span className="section-tag">Zenco Insights</span>
+          <span className="section-tag">{SITE_CONFIG.name} Insights</span>
           <h1 className="text-3xl md:text-5xl font-bold text-primary mb-3">Blog & Industry News</h1>
           <p className="text-gray-500 leading-relaxed">
-            Read professional insights, engineering calculators, NEMA safety guidelines, and updates from the Zenco Systems technical team.
+            Read professional insights, engineering calculators, safety guidelines, and updates from the {SITE_CONFIG.name} technical team.
           </p>
         </div>
 

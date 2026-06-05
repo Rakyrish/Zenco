@@ -7,6 +7,7 @@ import { Filter, MessageCircle, Search, SlidersHorizontal, X } from 'lucide-reac
 import ProductCard from '@/components/products/ProductCard'
 import { whatsappHref } from '@/components/products/product-helpers'
 import { getCategories, getProducts } from '@/lib/api'
+import { SITE_CONFIG } from '@/lib/constants'
 import type { Category, ProductListItem } from '@/types'
 
 const sortOptions = [
@@ -114,7 +115,7 @@ function ProductsContent() {
               <p className="text-xs font-black uppercase tracking-[0.28em] text-accent">Industrial chemicals catalog</p>
               <h1 className="mt-3 max-w-4xl text-4xl font-black leading-tight text-primary md:text-6xl">Premium Chemical Product Catalog</h1>
               <p className="mt-4 max-w-2xl text-sm leading-7 text-zinc-600 md:text-base">
-                Browse Zenco Chemicals Ltd products by category, application, availability, and procurement need across Kenya and East Africa.
+                Browse {SITE_CONFIG.name} products by category, application, availability, and procurement need across {SITE_CONFIG.serviceArea}.
               </p>
             </div>
             <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-5">
@@ -223,7 +224,7 @@ function ProductsContent() {
                 <Link key={item.slug} href={`/products/category/${item.slug}`} className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm transition hover:border-accent hover:shadow-lg">
                   <span className="text-xs font-black uppercase tracking-widest text-accent">{item.product_count} products</span>
                   <h3 className="mt-2 text-lg font-black text-primary">{item.name}</h3>
-                  <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-zinc-500">{item.description || `Browse ${item.name} chemicals supplied by Zenco Chemicals Ltd.`}</p>
+                  <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-zinc-500">{item.description || `Browse ${item.name} chemicals supplied by ${SITE_CONFIG.name}.`}</p>
                 </Link>
               ))}
             </div>

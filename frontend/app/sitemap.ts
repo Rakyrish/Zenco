@@ -1,6 +1,7 @@
 import type { MetadataRoute } from 'next'
 import { SITE_CONFIG } from '@/lib/constants'
 import { getProducts, getCategories, getBlogPosts, getServices, getIndustries } from '@/lib/api'
+import { INDUSTRY_PAGES, SERVICE_PAGES } from '@/lib/navigation-content'
 
 export const revalidate = 3600 // 1 hour
 
@@ -17,6 +18,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/blog`, lastModified: new Date(), changeFrequency: 'daily', priority: 0.8 },
     { url: `${base}/contact`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
     { url: `${base}/faqs`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.6 },
+    { url: `${base}/privacy`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.4 },
+    { url: `${base}/terms`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.4 },
   ]
 
   // Dynamic routes (parallel fetch)
@@ -60,24 +63,26 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       : []
 
   const serviceRoutes: MetadataRoute.Sitemap =
-    services.status === 'fulfilled'
-      ? services.value.map(s => ({
-          url: `${base}/services/${s.slug}`,
+    Array.from(new Set([
+      ...SERVICE_PAGES.map(service => service.slug),
+      ...(services.status === 'fulfilled' ? services.value.map(service => service.slug) : []),
+    ])).map(slug => ({
+          url: `${base}/services/${slug}`,
           lastModified: new Date(),
           changeFrequency: 'monthly' as const,
           priority: 0.7,
         }))
-      : []
 
   const industryRoutes: MetadataRoute.Sitemap =
-    industries.status === 'fulfilled'
-      ? industries.value.map(i => ({
-          url: `${base}/industries/${i.slug}`,
+    Array.from(new Set([
+      ...INDUSTRY_PAGES.map(industry => industry.slug),
+      ...(industries.status === 'fulfilled' ? industries.value.map(industry => industry.slug) : []),
+    ])).map(slug => ({
+          url: `${base}/industries/${slug}`,
           lastModified: new Date(),
           changeFrequency: 'monthly' as const,
           priority: 0.7,
         }))
-      : []
 
   return [
     ...staticRoutes,

@@ -30,8 +30,8 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
     const keywords = [
       product.name,
       product.category.name,
-      `${product.name} supplier Kenya`,
-      `${product.name} East Africa`,
+      `${product.name} supplier ${SITE_CONFIG.address.country}`,
+      `${product.name} ${SITE_CONFIG.serviceArea}`,
       ...((product.schema_data?.seo_keywords as string[] | undefined) || []),
     ]
     return generatePageMetadata({

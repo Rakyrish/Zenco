@@ -25,11 +25,11 @@ export function productUrl(product?: Pick<ProductListItem, 'slug'>) {
 
 export function whatsappMessage(product?: Pick<ProductListItem, 'name' | 'slug' | 'category_name'>, context = 'product inquiry') {
   if (!product) {
-    return 'Hello Zenco Chemicals Ltd, I am interested in your industrial chemical products. Please provide catalog and quotation assistance.'
+    return `Hello ${SITE_CONFIG.name}, I am interested in your industrial chemical products. Please provide catalog and quotation assistance.`
   }
 
   return [
-    `Hello Zenco Chemicals Ltd, I am interested in ${product.name}.`,
+    `Hello ${SITE_CONFIG.name}, I am interested in ${product.name}.`,
     '',
     `Product: ${productUrl(product)}`,
     `Category: ${product.category_name || 'Chemical products'}`,
@@ -41,12 +41,12 @@ export function whatsappMessage(product?: Pick<ProductListItem, 'name' | 'slug' 
 
 export function whatsappHref(product?: Pick<ProductListItem, 'name' | 'slug' | 'category_name'> | string, context = 'product inquiry') {
   const message = typeof product === 'string'
-    ? `Hello Zenco Chemicals Ltd, I am interested in ${product}. Please provide a quotation, availability, packaging options, and delivery details.`
+    ? `Hello ${SITE_CONFIG.name}, I am interested in ${product}. Please provide a quotation, availability, packaging options, and delivery details.`
     : whatsappMessage(product, context)
   const number = SITE_CONFIG.whatsapp.replace(/[^\d]/g, '')
   return number ? `https://wa.me/${number}?text=${encodeURIComponent(message)}` : `/contact${typeof product === 'object' && product?.name ? `?type=quote&product=${encodeURIComponent(product.name)}` : ''}`
 }
 
 export function productAlt(product: Pick<ProductListItem, 'name' | 'category_name'>) {
-  return `${product.name} industrial chemical supplied by Zenco Chemicals Ltd in ${product.category_name}`
+  return `${product.name} industrial chemical supplied by ${SITE_CONFIG.name} in ${product.category_name}`
 }

@@ -18,7 +18,7 @@ function faqsFromSchema(value: unknown) {
   if (!Array.isArray(value)) return []
   return value
     .map(item => {
-      if (typeof item === 'string') return { question: item, answer: 'Contact Zenco Chemicals Ltd sales for product handling, packaging, and availability guidance.' }
+      if (typeof item === 'string') return { question: item, answer: `Contact ${SITE_CONFIG.name} sales for product handling, packaging, and availability guidance.` }
       if (item && typeof item === 'object') {
         const data = item as Record<string, unknown>
         return { question: String(data.question || ''), answer: String(data.answer || '') }
@@ -120,8 +120,8 @@ export default function ProductDetailExperience({ product }: { product: ProductD
         <section className="grid gap-4 md:grid-cols-3">
           {[
             ['Packaging', product.packaging || 'Confirm with sales'],
-            ['Supply Region', product.regions_available.join(', ') || 'East Africa'],
-            ['Supplier', 'Zenco Chemicals Ltd'],
+            ['Supply Region', product.regions_available.join(', ') || SITE_CONFIG.serviceArea],
+            ['Supplier', SITE_CONFIG.name],
           ].map(([labelText, value]) => (
             <div key={labelText} className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
               <p className="text-xs font-extrabold uppercase tracking-widest text-zinc-400">{labelText}</p>
@@ -176,7 +176,7 @@ export default function ProductDetailExperience({ product }: { product: ProductD
         <section className="rounded-lg border border-zinc-200 bg-white p-6 shadow-sm">
           <h2 className="text-xl font-black text-primary">Product Overview</h2>
           <p className="mt-4 text-sm leading-7 text-zinc-600">
-            {product.name} is supplied by Zenco Chemicals Ltd for industrial buyers, distributors, laboratories, manufacturers, and procurement teams across Kenya and East Africa. Zenco Chemicals Ltd supports quotation requests, packaging confirmation, product availability checks, and regional supply coordination for this product category.
+            {product.name} is supplied by {SITE_CONFIG.name} for industrial buyers, distributors, laboratories, manufacturers, and procurement teams across {SITE_CONFIG.serviceArea}. {SITE_CONFIG.name} supports quotation requests, packaging confirmation, product availability checks, and regional supply coordination for this product category.
           </p>
           {!!links.length && (
             <div className="mt-5 flex flex-wrap gap-2">
@@ -243,7 +243,7 @@ export default function ProductDetailExperience({ product }: { product: ProductD
             <div className="mb-5 flex items-end justify-between gap-4">
               <div>
                 <h2 className="text-2xl font-black text-primary">Featured Products</h2>
-                <p className="mt-1 text-sm text-zinc-500">High-priority products from the Zenco Chemicals Ltd catalog.</p>
+                <p className="mt-1 text-sm text-zinc-500">High-priority products from the {SITE_CONFIG.name} catalog.</p>
               </div>
               <Link href="/products" className="text-sm font-bold text-accent hover:text-primary">Browse catalog</Link>
             </div>

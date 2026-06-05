@@ -17,10 +17,10 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
     const category = await getCategoryBySlug(slug)
     return generatePageMetadata({
       title: category.seo_title || `${category.name} Chemicals`,
-      description: category.seo_description || category.description || `${category.name} chemicals supplied by Zenco Chemicals Ltd across Kenya and East Africa.`,
+      description: category.seo_description || category.description || `${category.name} chemicals supplied by ${SITE_CONFIG.name} across ${SITE_CONFIG.serviceArea}.`,
       path: `/products/category/${category.slug}`,
       image: category.image || undefined,
-      keywords: [category.name, `${category.name} Kenya`, `${category.name} supplier East Africa`],
+      keywords: [category.name, `${category.name} ${SITE_CONFIG.address.country}`, `${category.name} supplier ${SITE_CONFIG.serviceArea}`],
     })
   } catch {
     return generatePageMetadata({ title: 'Chemical Categories', description: SITE_CONFIG.description, path: '/products' })
@@ -46,8 +46,8 @@ export default async function CategoryCatalogPage({ params }: CategoryPageProps)
   const relatedCategories = categories.filter(item => item.slug !== category.slug).slice(0, 6)
   const faqs = [
     {
-      question: `Does Zenco Chemicals Ltd supply ${category.name} in East Africa?`,
-      answer: `Yes. Zenco Chemicals Ltd supplies ${category.name} products for buyers in Kenya and wider East Africa, subject to stock, packaging, and delivery confirmation.`,
+      question: `Does ${SITE_CONFIG.name} supply ${category.name} in ${SITE_CONFIG.serviceArea}?`,
+      answer: `Yes. ${SITE_CONFIG.name} supplies ${category.name} products for buyers in ${SITE_CONFIG.address.country} and wider ${SITE_CONFIG.serviceArea}, subject to stock, packaging, and delivery confirmation.`,
     },
     {
       question: `Can I request a quotation for ${category.name}?`,
@@ -77,7 +77,7 @@ export default async function CategoryCatalogPage({ params }: CategoryPageProps)
             <p className="text-xs font-black uppercase tracking-[0.28em] text-accent">Category catalog</p>
             <h1 className="mt-3 text-4xl font-black leading-tight text-primary md:text-6xl">{category.name}</h1>
             <p className="mt-4 text-sm leading-7 text-zinc-600 md:text-base">
-              {category.description || `${category.name} products supplied by Zenco Chemicals Ltd for procurement teams, distributors, laboratories, and industrial buyers.`}
+              {category.description || `${category.name} products supplied by ${SITE_CONFIG.name} for procurement teams, distributors, laboratories, and industrial buyers.`}
             </p>
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">
               <a
@@ -126,7 +126,7 @@ export default async function CategoryCatalogPage({ params }: CategoryPageProps)
           <div className="rounded-lg border border-zinc-200 bg-white p-6 shadow-sm">
             <h2 className="text-xl font-black text-primary">{category.name} Supply Information</h2>
             <p className="mt-4 text-sm leading-7 text-zinc-600">
-              Zenco Chemicals Ltd supplies {category.name} products for industrial buyers across Kenya, Uganda, Tanzania, Rwanda, Burundi, South Sudan, Ethiopia, Somalia, and the Democratic Republic of the Congo. Product availability, packaging, transport, and documentation are confirmed by the sales team before dispatch.
+              {SITE_CONFIG.name} supplies {category.name} products for industrial buyers across {SITE_CONFIG.serviceArea}. Product availability, packaging, transport, and documentation are confirmed by the sales team before dispatch.
             </p>
           </div>
           <div className="rounded-lg border border-zinc-200 bg-white p-6 shadow-sm">

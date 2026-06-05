@@ -25,6 +25,25 @@ export default function Header() {
   const [categories, setCategories] = useState<Category[]>([])
   const pathname = usePathname()
   const megaRef = useRef<HTMLDivElement>(null)
+  const megaCloseTimer = useRef<number | null>(null)
+
+  const openMegaMenu = (menu: string) => {
+    if (megaCloseTimer.current) {
+      window.clearTimeout(megaCloseTimer.current)
+      megaCloseTimer.current = null
+    }
+    setMegaMenu(menu)
+  }
+
+  const closeMegaMenu = () => {
+    if (megaCloseTimer.current) {
+      window.clearTimeout(megaCloseTimer.current)
+    }
+    megaCloseTimer.current = window.setTimeout(() => {
+      setMegaMenu(null)
+      megaCloseTimer.current = null
+    }, 160)
+  }
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20)
@@ -69,6 +88,14 @@ export default function Header() {
     }
     window.addEventListener('keydown', handleKey)
     return () => window.removeEventListener('keydown', handleKey)
+  }, [])
+
+  useEffect(() => {
+    return () => {
+      if (megaCloseTimer.current) {
+        window.clearTimeout(megaCloseTimer.current)
+      }
+    }
   }, [])
 
   const isActive = (href: string) =>
@@ -129,8 +156,8 @@ export default function Header() {
                         'text-white/80 hover:text-white hover:bg-white/10 transition-all duration-150',
                         isActive(link.href) && 'text-accent',
                       )}
-                      onMouseEnter={() => setMegaMenu('products')}
-                      onMouseLeave={() => setMegaMenu(null)}
+                      onMouseEnter={() => openMegaMenu('products')}
+                      onMouseLeave={closeMegaMenu}
                       aria-haspopup="true"
                       aria-expanded={megaMenu === 'products'}
                     >
@@ -189,8 +216,8 @@ export default function Header() {
               {megaMenu === 'products' && (
                 <div
                   className="absolute top-full left-0 right-0 mt-0 bg-white shadow-2xl border-t-2 border-accent z-50"
-                  onMouseEnter={() => setMegaMenu('products')}
-                  onMouseLeave={() => setMegaMenu(null)}
+                  onMouseEnter={() => openMegaMenu('products')}
+                  onMouseLeave={closeMegaMenu}
                 >
                   <div className="container-xl px-4 py-8">
                     <div className="grid grid-cols-4 gap-6">
@@ -222,7 +249,7 @@ export default function Header() {
                       <div className="bg-gradient-hero rounded-2xl p-6 text-white pattern-dots">
                         <p className="font-bold text-base mb-2">Need a Quote?</p>
                         <p className="text-white/70 text-sm mb-4">
-                          Get competitive pricing for bulk chemical orders across East Africa.
+                          Get competitive pricing for bulk chemical orders across {SITE_CONFIG.serviceArea}.
                         </p>
                         <Link
                           href="/contact?type=quote"

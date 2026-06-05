@@ -2,13 +2,6 @@ import type { NextConfig } from 'next'
 import { existsSync, readFileSync } from 'fs'
 import path from 'path'
 
-const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'
-const mediaUrl = new URL(apiUrl.replace(/\/api\/?$/, ''))
-const apiOrigin = mediaUrl.origin
-const allowedDevOrigins = (process.env.NEXT_ALLOWED_DEV_ORIGINS || '')
-  .split(',')
-  .map(origin => origin.trim())
-  .filter(Boolean)
 const rootEnvPath = path.resolve(process.cwd(), '..', '.env')
 
 function readRootEnvValue(key: string) {
@@ -21,24 +14,54 @@ function readRootEnvValue(key: string) {
   return line?.slice(key.length + 1).trim().replace(/^["']|["']$/g, '') || ''
 }
 
-const companyPhoneNumber =
-  readRootEnvValue('COMPANY_PHONE_NUMBER') ||
-  process.env.COMPANY_PHONE_NUMBER ||
-  process.env.NEXT_PUBLIC_PHONE_NUMBER ||
-  ''
-const companyEmail =
-  readRootEnvValue('COMPANY_EMAIL') ||
-  process.env.COMPANY_EMAIL ||
-  process.env.NEXT_PUBLIC_COMPANY_EMAIL ||
-  ''
+function publicEnv(publicKey: string, rootKey = publicKey) {
+  return readRootEnvValue(rootKey) || process.env[publicKey] || ''
+}
+
+const apiUrl = publicEnv('NEXT_PUBLIC_API_URL').replace(/\/$/, '')
+const mediaUrl = new URL(apiUrl.replace(/\/api\/?$/, ''))
+const apiOrigin = mediaUrl.origin
+const allowedDevOrigins = (readRootEnvValue('NEXT_ALLOWED_DEV_ORIGINS') || process.env.NEXT_ALLOWED_DEV_ORIGINS || '')
+  .split(',')
+  .map(origin => origin.trim())
+  .filter(Boolean)
 
 const nextConfig: NextConfig = {
   // Strict mode for better DX
   reactStrictMode: true,
   allowedDevOrigins,
   env: {
-    NEXT_PUBLIC_PHONE_NUMBER: companyPhoneNumber,
-    NEXT_PUBLIC_COMPANY_EMAIL: companyEmail,
+    NEXT_PUBLIC_API_URL: apiUrl,
+    NEXT_PUBLIC_SITE_URL: publicEnv('NEXT_PUBLIC_SITE_URL', 'SITE_URL'),
+    NEXT_PUBLIC_COMPANY_NAME: publicEnv('NEXT_PUBLIC_COMPANY_NAME', 'COMPANY_NAME'),
+    NEXT_PUBLIC_COMPANY_DIVISION: publicEnv('NEXT_PUBLIC_COMPANY_DIVISION', 'COMPANY_DIVISION'),
+    NEXT_PUBLIC_COMPANY_FULL_NAME: publicEnv('NEXT_PUBLIC_COMPANY_FULL_NAME', 'COMPANY_FULL_NAME'),
+    NEXT_PUBLIC_COMPANY_TAGLINE: publicEnv('NEXT_PUBLIC_COMPANY_TAGLINE', 'COMPANY_TAGLINE'),
+    NEXT_PUBLIC_COMPANY_DESCRIPTION: publicEnv('NEXT_PUBLIC_COMPANY_DESCRIPTION', 'COMPANY_DESCRIPTION'),
+    NEXT_PUBLIC_PHONE_NUMBER: publicEnv('NEXT_PUBLIC_PHONE_NUMBER', 'COMPANY_PHONE_NUMBER'),
+    NEXT_PUBLIC_WHATSAPP_NUMBER: publicEnv('NEXT_PUBLIC_WHATSAPP_NUMBER', 'COMPANY_WHATSAPP_NUMBER'),
+    NEXT_PUBLIC_COMPANY_EMAIL: publicEnv('NEXT_PUBLIC_COMPANY_EMAIL', 'COMPANY_EMAIL'),
+    NEXT_PUBLIC_COMPANY_STREET_ADDRESS: publicEnv('NEXT_PUBLIC_COMPANY_STREET_ADDRESS', 'COMPANY_STREET_ADDRESS'),
+    NEXT_PUBLIC_COMPANY_CITY: publicEnv('NEXT_PUBLIC_COMPANY_CITY', 'COMPANY_CITY'),
+    NEXT_PUBLIC_COMPANY_COUNTRY: publicEnv('NEXT_PUBLIC_COMPANY_COUNTRY', 'COMPANY_COUNTRY'),
+    NEXT_PUBLIC_COMPANY_POSTAL_CODE: publicEnv('NEXT_PUBLIC_COMPANY_POSTAL_CODE', 'COMPANY_POSTAL_CODE'),
+    NEXT_PUBLIC_COMPANY_OPENING_HOURS: publicEnv('NEXT_PUBLIC_COMPANY_OPENING_HOURS', 'COMPANY_OPENING_HOURS'),
+    NEXT_PUBLIC_SERVICE_AREA: publicEnv('NEXT_PUBLIC_SERVICE_AREA', 'SERVICE_AREA'),
+    NEXT_PUBLIC_LOCALE: publicEnv('NEXT_PUBLIC_LOCALE', 'SITE_LOCALE'),
+    NEXT_PUBLIC_TIME_ZONE: publicEnv('NEXT_PUBLIC_TIME_ZONE', 'SITE_TIME_ZONE'),
+    NEXT_PUBLIC_CURRENCY: publicEnv('NEXT_PUBLIC_CURRENCY', 'SITE_CURRENCY'),
+    NEXT_PUBLIC_ACCEPTED_CURRENCIES: publicEnv('NEXT_PUBLIC_ACCEPTED_CURRENCIES', 'ACCEPTED_CURRENCIES'),
+    NEXT_PUBLIC_COMPANY_LATITUDE: publicEnv('NEXT_PUBLIC_COMPANY_LATITUDE', 'COMPANY_LATITUDE'),
+    NEXT_PUBLIC_COMPANY_LONGITUDE: publicEnv('NEXT_PUBLIC_COMPANY_LONGITUDE', 'COMPANY_LONGITUDE'),
+    NEXT_PUBLIC_GOOGLE_MAPS_PLACE_QUERY: publicEnv('NEXT_PUBLIC_GOOGLE_MAPS_PLACE_QUERY', 'GOOGLE_MAPS_PLACE_QUERY'),
+    NEXT_PUBLIC_GOOGLE_MAPS_EMBED_KEY: publicEnv('NEXT_PUBLIC_GOOGLE_MAPS_EMBED_KEY', 'GOOGLE_MAPS_EMBED_KEY'),
+    NEXT_PUBLIC_LINKEDIN_URL: publicEnv('NEXT_PUBLIC_LINKEDIN_URL', 'LINKEDIN_URL'),
+    NEXT_PUBLIC_INSTAGRAM_URL: publicEnv('NEXT_PUBLIC_INSTAGRAM_URL', 'INSTAGRAM_URL'),
+    NEXT_PUBLIC_FACEBOOK_URL: publicEnv('NEXT_PUBLIC_FACEBOOK_URL', 'FACEBOOK_URL'),
+    NEXT_PUBLIC_TIKTOK_URL: publicEnv('NEXT_PUBLIC_TIKTOK_URL', 'TIKTOK_URL'),
+    NEXT_PUBLIC_TWITTER_URL: publicEnv('NEXT_PUBLIC_TWITTER_URL', 'TWITTER_URL'),
+    NEXT_PUBLIC_TWITTER_HANDLE: publicEnv('NEXT_PUBLIC_TWITTER_HANDLE', 'TWITTER_HANDLE'),
+    NEXT_PUBLIC_DEFAULT_KEYWORDS: publicEnv('NEXT_PUBLIC_DEFAULT_KEYWORDS', 'DEFAULT_KEYWORDS'),
   },
 
   // Image optimization

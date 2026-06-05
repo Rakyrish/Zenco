@@ -1,6 +1,7 @@
 'use client'
 
 import { cn } from '@/lib/utils'
+import { SITE_CONFIG } from '@/lib/constants'
 
 interface LogoProps {
   className?: string
@@ -93,7 +94,7 @@ export default function Logo({
               textClassName
             )}
           >
-            Zenco Systems
+            {SITE_CONFIG.name}
           </span>
           <span
             className={cn(
@@ -101,7 +102,7 @@ export default function Logo({
               subtitleClassName
             )}
           >
-            Chemicals Division
+            {SITE_CONFIG.division}
           </span>
         </div>
       )}

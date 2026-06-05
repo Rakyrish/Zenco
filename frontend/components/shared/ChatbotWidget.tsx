@@ -44,6 +44,8 @@ import {
   User,
   Building,
   ArrowLeft,
+  Package,
+  Bell,
 } from 'lucide-react'
 import {
   getChatSessionId,
@@ -53,15 +55,18 @@ import {
   makeMessage,
   clearChatSession,
   type ChatMessage,
+  type ChatAction,
+  type ChatProduct,
 } from '@/lib/chatbot'
-import { SITE_CONFIG } from '@/lib/constants'
+import { AVAILABILITY_LABELS, SITE_CONFIG } from '@/lib/constants'
 import { submitInquiry } from '@/lib/api'
+import { mediaUrl } from '@/lib/utils'
 
 // ─── Constants & Configurations ──────────────────────────────────────────────
 
-const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER?.replace(/\D/g, '') || '254114591982'
-const PHONE_NUMBER = process.env.NEXT_PUBLIC_PHONE_NUMBER || '+254 726 559 606' // Synced with mockup phone
-const COMPANY_EMAIL = process.env.NEXT_PUBLIC_COMPANY_EMAIL || 'info@finstarindustrial.com' // Synced with mockup email
+const WHATSAPP_NUMBER = SITE_CONFIG.whatsapp.replace(/\D/g, '')
+const PHONE_NUMBER = SITE_CONFIG.phone
+const COMPANY_EMAIL = SITE_CONFIG.email
 
 const QUICK_PROMPTS = [
   { label: '💧 Water Treatment', text: 'What water treatment chemicals do you supply?' },
@@ -77,8 +82,20 @@ const WELCOME_MESSAGE = makeMessage(
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function parseMarkdown(text: string): string {
+function sanitizeChatText(text: string): string {
   return text
+    .replace(/https?:\/\/\S+/g, '')
+    .replace(/www\.\S+/g, '')
+    .replace(/\b[\w.-]+@[\w.-]+\.\w+\b/g, '')
+    .replace(/(?<!\w)(?:\+?\d[\d\s().-]{7,}\d)(?!\w)/g, '')
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .replace(/[ \t]{2,}/g, ' ')
+    .trim()
+}
+
+function parseMarkdown(text: string): string {
+  return sanitizeChatText(text)
     .replace(/\*\/(.+?)\*\//g, '<strong>$1</strong>')
     .replace(/\*(.+?)\*/g, '<em>$1</em>')
     .replace(/`(.+?)`/g, '<code class="bg-gray-100 dark:bg-gray-700 px-1 rounded text-xs font-mono">$1</code>')
@@ -89,7 +106,7 @@ function parseMarkdown(text: string): string {
 function getBusinessStatus(): { isOpen: boolean; message: string } {
   try {
     const now = new Date()
-    const eatTime = new Date(now.toLocaleString('en-US', { timeZone: 'Africa/Nairobi' }))
+    const eatTime = new Date(now.toLocaleString('en-US', { timeZone: SITE_CONFIG.timeZone }))
     const day = eatTime.getDay()
     const hours = eatTime.getHours()
     const minutes = eatTime.getMinutes()
@@ -141,6 +158,120 @@ function TypingIndicator() {
   )
 }
 
+function productIsOutOfStock(product: ChatProduct) {
+  return product.availability === 'out_of_stock' || product.stock_quantity === 0
+}
+
+function ProductMiniCard({ product }: { product: ChatProduct }) {
+  const label = productIsOutOfStock(product)
+    ? AVAILABILITY_LABELS.out_of_stock
+    : AVAILABILITY_LABELS[product.availability] || AVAILABILITY_LABELS.in_stock
+  const image = product.image ? mediaUrl(product.image) : ''
+
+  return (
+    <div className="mt-2 overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-850">
+      <div className="flex gap-3 p-3">
+        <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl bg-gray-100 dark:bg-gray-800">
+          {image ? (
+            <img src={image} alt={product.name} className="h-full w-full object-cover" loading="lazy" />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center text-gray-400">
+              <Package size={22} />
+            </div>
+          )}
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="line-clamp-2 text-xs font-extrabold text-gray-950 dark:text-white">{product.name}</p>
+          <p className="mt-1 truncate text-[11px] font-semibold text-gray-500 dark:text-gray-400">
+            {product.category || 'Product catalog'}
+          </p>
+          <span className={`mt-2 inline-flex rounded-md px-2 py-1 text-[10px] font-black ${label.color}`}>
+            {label.label}
+          </span>
+        </div>
+      </div>
+      {product.short_description && (
+        <p className="border-t border-gray-100 px-3 py-2 text-[11px] leading-relaxed text-gray-500 line-clamp-2 dark:border-gray-700 dark:text-gray-400">
+          {product.short_description}
+        </p>
+      )}
+    </div>
+  )
+}
+
+function actionHref(action: ChatAction, product?: ChatProduct) {
+  const productName = product?.name || 'product inquiry'
+  const encodedProduct = encodeURIComponent(productName)
+
+  switch (action) {
+    case 'view_product':
+      return product?.slug ? `/products/${product.slug}` : '/products'
+    case 'request_quote':
+      return `/contact?type=quote${product ? `&product=${encodedProduct}` : ''}`
+    case 'request_product':
+    case 'notify_me':
+      return `/contact?type=product${product ? `&product=${encodedProduct}` : ''}`
+    case 'whatsapp_sales': {
+      const text = encodeURIComponent(`Hello ${SITE_CONFIG.name}, I need assistance with ${productName}.`)
+      return WHATSAPP_NUMBER ? `https://wa.me/${WHATSAPP_NUMBER}?text=${text}` : `/contact?type=quote${product ? `&product=${encodedProduct}` : ''}`
+    }
+    case 'call_sales':
+      return PHONE_NUMBER ? `tel:${PHONE_NUMBER}` : '/contact'
+    case 'email_sales':
+      return COMPANY_EMAIL ? `mailto:${COMPANY_EMAIL}?subject=${encodeURIComponent(`${SITE_CONFIG.name} sales inquiry`)}` : '/contact'
+    default:
+      return '/contact'
+  }
+}
+
+function actionMeta(action: ChatAction) {
+  switch (action) {
+    case 'view_product':
+      return { label: 'View Product', icon: Package, className: 'bg-primary text-white hover:bg-primary-600' }
+    case 'request_quote':
+      return { label: 'Request Quote', icon: Send, className: 'bg-accent text-white hover:bg-orange-600' }
+    case 'whatsapp_sales':
+      return { label: 'WhatsApp Sales Team', icon: MessageSquareMore, className: 'bg-green-600 text-white hover:bg-green-700' }
+    case 'call_sales':
+      return { label: 'Call Sales', icon: Phone, className: 'bg-blue-600 text-white hover:bg-blue-700' }
+    case 'email_sales':
+      return { label: 'Email Sales Team', icon: Mail, className: 'bg-violet-600 text-white hover:bg-violet-700' }
+    case 'notify_me':
+      return { label: 'Notify Me', icon: Bell, className: 'bg-amber-500 text-white hover:bg-amber-600' }
+    case 'request_product':
+      return { label: 'Request Product', icon: Package, className: 'bg-primary text-white hover:bg-primary-600' }
+    default:
+      return { label: 'Contact Sales', icon: MessageSquare, className: 'bg-primary text-white hover:bg-primary-600' }
+  }
+}
+
+function ChatActions({ actions, product }: { actions: ChatAction[]; product?: ChatProduct }) {
+  if (!actions.length) return null
+
+  return (
+    <div className="mt-2 grid gap-2 sm:grid-cols-2">
+      {actions.map(action => {
+        const meta = actionMeta(action)
+        const Icon = meta.icon
+        const external = action === 'whatsapp_sales' || action === 'call_sales' || action === 'email_sales'
+
+        return (
+          <a
+            key={action}
+            href={actionHref(action, product)}
+            target={external && action === 'whatsapp_sales' ? '_blank' : undefined}
+            rel={external && action === 'whatsapp_sales' ? 'noopener noreferrer' : undefined}
+            className={`inline-flex min-h-10 items-center justify-center gap-2 rounded-xl px-3 py-2 text-[11px] font-black transition ${meta.className}`}
+          >
+            <Icon size={14} />
+            <span>{meta.label}</span>
+          </a>
+        )
+      })}
+    </div>
+  )
+}
+
 function MessageBubble({ msg }: { msg: ChatMessage }) {
   const isUser = msg.role === 'user'
   const time = new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
@@ -162,22 +293,17 @@ function MessageBubble({ msg }: { msg: ChatMessage }) {
           }`}
           dangerouslySetInnerHTML={{ __html: parseMarkdown(msg.content) }}
         />
-        {!isUser && msg.escalation_link && (
-          <a
-            href={msg.escalation_link}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-3 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white rounded-2xl px-4 py-3 text-sm font-semibold shadow-md transition-all hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] mt-2"
-          >
-            <div className="w-8 h-8 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
-              <Phone size={16} />
-            </div>
-            <div>
-              <p className="text-xs font-bold">Chat on WhatsApp</p>
-              <p className="text-[10px] text-green-100 font-normal">Connect directly with sales</p>
-            </div>
-            <Zap size={14} className="ml-auto text-yellow-300" />
-          </a>
+        {!isUser && (
+          <>
+            {!!msg.products?.length && (
+              <div className="space-y-2">
+                {msg.products.slice(0, 2).map(product => (
+                  <ProductMiniCard key={product.id || product.slug} product={product} />
+                ))}
+              </div>
+            )}
+            <ChatActions actions={msg.actions || []} product={msg.products?.[0]} />
+          </>
         )}
         <span className={`text-[10px] text-gray-400 px-1 ${isUser ? 'text-right' : 'text-left'}`}>
           {time}
@@ -304,7 +430,12 @@ export default function ChatbotWidget() {
         setSessionId(response.session_id)
       }
 
-      const assistantMsg = makeMessage('assistant', response.reply, response.escalation_link)
+      const assistantMsg = makeMessage('assistant', response.reply, null, {
+        actions: response.actions || [],
+        products: response.products || [],
+        product_slug: response.product_slug,
+        product_id: response.product_id,
+      })
       setMessages(prev => {
         const next = [...prev, assistantMsg]
         saveChatMessages(next)
@@ -317,7 +448,9 @@ export default function ChatbotWidget() {
     } catch {
       const errorMsg = makeMessage(
         'assistant',
-        `I'm having trouble connecting right now. Please try again or contact us directly:\n\n📱 WhatsApp: https://wa.me/${WHATSAPP_NUMBER}?text=Hello%20Zenco\n📧 info@finstarindustrial.com`,
+        'I am having trouble connecting right now. Please use the sales contact options below and our team will assist you.',
+        null,
+        { actions: ['whatsapp_sales', 'call_sales', 'email_sales'] },
       )
       setMessages(prev => {
         const next = [...prev, errorMsg]
@@ -348,8 +481,8 @@ export default function ChatbotWidget() {
   // ── WhatsApp Direct launcher ──────────────────────────────────────────────
   const handleLaunchWhatsApp = () => {
     const defaultText = whatsappDept === 'sales'
-      ? 'Hello Zenco Chemicals Sales, I would like to inquire about chemical procurement.'
-      : 'Hello Zenco Chemicals Support, I have a technical or service inquiry.'
+      ? `Hello ${SITE_CONFIG.name} Sales, I would like to inquire about chemical procurement.`
+      : `Hello ${SITE_CONFIG.name} Support, I have a technical or service inquiry.`
     const text = encodeURIComponent(whatsappMsg.trim() || defaultText)
     const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${text}`
     window.open(url, '_blank')
@@ -716,7 +849,7 @@ export default function ChatbotWidget() {
                     <div>
                       <p className="text-xs text-gray-400">Direct desk Hotline</p>
                       <a href={`tel:${PHONE_NUMBER}`} className="text-sm font-extrabold text-gray-900 dark:text-white hover:text-[#0066FF]">
-                        {PHONE_NUMBER}
+                        Tap to call sales desk
                       </a>
                     </div>
                   </div>

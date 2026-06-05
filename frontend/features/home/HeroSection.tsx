@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { ArrowRight, ShieldCheck, Award, Globe, Beaker } from 'lucide-react'
+import { SITE_CONFIG } from '@/lib/constants'
 
 
 
@@ -31,20 +32,20 @@ export default function HeroSection() {
           {/* Live badge */}
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-accent/25 bg-accent/10 text-accent text-xs font-bold uppercase tracking-widest animate-fade-in">
             <span className="flex h-2 w-2 rounded-full bg-accent animate-ping" />
-            Premier Chemical Distributor — East Africa
+            Premier Chemical Distributor - {SITE_CONFIG.serviceArea}
           </div>
 
           {/* Main headline */}
           <h1 className="font-display text-4xl md:text-5xl lg:text-display-lg text-white leading-tight tracking-tight animate-fade-up animate-delay-100">
             Enterprise-Grade Chemical Solutions for{' '}
             <span className="text-accent underline decoration-accent/30 decoration-wavy underline-offset-8">
-              East Africa
+              {SITE_CONFIG.serviceArea}
             </span>
           </h1>
 
           <p className="text-lg text-gray-300 max-w-xl mx-auto lg:mx-0 leading-relaxed animate-fade-up animate-delay-200">
-            Zenco Systems delivers high-purity industrial chemicals, laboratory reagents,
-            water treatment compounds, and bulk specialty chemicals across Kenya and East Africa —
+            {SITE_CONFIG.name} delivers high-purity industrial chemicals, laboratory reagents,
+            water treatment compounds, and bulk specialty chemicals across {SITE_CONFIG.serviceArea} -
             with rigorous quality guarantees and rapid logistics.
           </p>
 
@@ -76,7 +77,7 @@ export default function HeroSection() {
               <div className="flex items-start justify-between mb-8">
                 <div>
                   <p className="text-accent text-xs font-bold uppercase tracking-widest mb-1">Chemical Profile</p>
-                  <h3 className="text-white font-display text-xl font-bold">Zenco Premium Grade</h3>
+                  <h3 className="text-white font-display text-xl font-bold">{SITE_CONFIG.name} Premium Grade</h3>
                 </div>
                 <span className="w-10 h-10 rounded-2xl bg-accent/15 border border-accent/25 flex items-center justify-center text-accent text-xl">⚗</span>
               </div>
