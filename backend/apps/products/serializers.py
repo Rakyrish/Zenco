@@ -34,6 +34,7 @@ class ProductListSerializer(serializers.ModelSerializer):
             'id', 'name', 'slug', 'short_description', 'category',
             'category_name', 'category_slug', 'image', 'availability',
             'stock_quantity', 'is_featured', 'regions_available',
+            'created_at', 'updated_at',
         ]
 
 

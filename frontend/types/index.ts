@@ -27,6 +27,8 @@ export interface ProductListItem {
   stock_quantity?: number
   is_featured: boolean
   regions_available: string[]
+  created_at: string
+  updated_at: string
 }
 
 export interface ProductDetail extends Omit<ProductListItem, 'category'> {
@@ -66,6 +68,7 @@ export interface BlogPost {
   reading_time: number
   is_featured: boolean
   published_at: string
+  updated_at: string
   author_name: string
 }
 

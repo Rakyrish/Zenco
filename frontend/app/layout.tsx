@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { SITE_CONFIG } from '@/lib/constants'
-import { organizationSchema, localBusinessSchema } from '@/lib/metadata'
+import { organizationSchema, localBusinessSchema, websiteSchema } from '@/lib/metadata'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import ChatbotWidget from '@/components/shared/ChatbotWidget'
@@ -27,6 +27,13 @@ export const metadata: Metadata = {
       'max-video-preview': -1,
       'max-image-preview': 'large',
       'max-snippet': -1,
+    },
+  },
+  alternates: {
+    canonical: SITE_CONFIG.url,
+    languages: {
+      'en-KE': SITE_CONFIG.url,
+      'x-default': SITE_CONFIG.url,
     },
   },
   openGraph: {
@@ -95,6 +102,13 @@ export default function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify(organizationSchema()),
+          }}
+        />
+        {/* WebSite SearchAction Schema */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(websiteSchema()),
           }}
         />
         {/* Local Business Schema */}

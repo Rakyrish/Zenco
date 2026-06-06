@@ -122,9 +122,21 @@ class Product(models.Model):
                 counter += 1
             self.slug = slug
         if not self.seo_title:
-            self.seo_title = f"{self.name} – Zenco Systems Ltd Kenya"[:70]
+            self.seo_title = f"{self.name} Supplier in Kenya | Buy {self.name} - Zenco"[:70]
         if not self.seo_description:
-            self.seo_description = self.short_description[:160]
+            apps_str = ""
+            if isinstance(self.applications, list) and self.applications:
+                apps_str = f" Used for {', '.join(self.applications[:2])}."
+            desc = self.short_description or self.description or ""
+            self.seo_description = f"Buy {self.name} from Zenco Systems Ltd.{apps_str} {desc}".replace("  ", " ")[:160]
+        if not isinstance(self.schema_data, dict):
+            self.schema_data = {}
+        if 'seo_keywords' not in self.schema_data:
+            keywords = [self.name.lower()]
+            if self.category:
+                keywords.append(self.category.name.lower())
+            keywords.extend(["chemical supply", "kenya supplier", "east africa"])
+            self.schema_data['seo_keywords'] = keywords
         super().save(*args, **kwargs)
 
     @property

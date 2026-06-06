@@ -1,12 +1,31 @@
-'use client'
-
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import { Award, ShieldCheck, HeartHandshake, Eye, Target, Users, Map, CheckCircle } from 'lucide-react'
 import { CERTIFICATIONS, SITE_CONFIG } from '@/lib/constants'
+import { generatePageMetadata, breadcrumbSchema } from '@/lib/metadata'
+
+export const metadata: Metadata = generatePageMetadata({
+  title: `About Us | ${SITE_CONFIG.fullName}`,
+  description: `Learn about ${SITE_CONFIG.fullName}, a leading chemical supplier in Kenya and East Africa. Our mission, quality controls, and compliance standards.`,
+  path: '/about',
+  keywords: ['about zenco systems', 'chemical supplier Kenya', 'industrial chemical supply East Africa', 'chemical quality control'],
+})
 
 export default function AboutPage() {
+  const breadcrumbs = [
+    { name: 'Home', href: '/' },
+    { name: 'About', href: '/about' },
+  ]
+
   return (
     <div className="min-h-screen bg-surface py-12">
+      {/* Breadcrumb Schema */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(breadcrumbSchema(breadcrumbs)),
+        }}
+      />
       <div className="container-xl px-4">
         {/* Header Section */}
         <div className="text-center max-w-3xl mx-auto mb-16">
@@ -56,14 +75,6 @@ export default function AboutPage() {
             </p>
 
             <div className="grid grid-cols-2 gap-4 pt-4">
-              {/* <div className="flex items-center gap-2">
-                <ShieldCheck size={18} className="text-accent" />
-                <span className="text-sm font-semibold text-primary">KEBS Compliant</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Award size={18} className="text-accent" />
-                <span className="text-sm font-semibold text-primary">ISO Certifications</span>
-              </div> */}
               <div className="flex items-center gap-2">
                 <Users size={18} className="text-accent" />
                 <span className="text-sm font-semibold text-primary">Expert Engineers</span>

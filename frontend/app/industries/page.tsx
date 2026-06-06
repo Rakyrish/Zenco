@@ -1,9 +1,22 @@
-'use client'
-
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import { ArrowRight, Factory, Droplets, UtensilsCrossed, Pill, Sprout, Paintbrush, Shirt, Zap, CheckCircle } from 'lucide-react'
 import { SITE_CONFIG } from '@/lib/constants'
 import { INDUSTRY_PAGES } from '@/lib/navigation-content'
+import { generatePageMetadata, breadcrumbSchema } from '@/lib/metadata'
+
+export const metadata: Metadata = generatePageMetadata({
+  title: `Target Industrial Sectors & Chemical Solutions`,
+  description: `Find chemical products and engineering solutions tailored for heavy manufacturing, water treatment plants, food processing, agriculture, and hospitality in ${SITE_CONFIG.serviceArea}.`,
+  path: '/industries',
+  keywords: [
+    'chemical solutions by industry',
+    'manufacturing raw materials Kenya',
+    'water treatment solutions',
+    'food processing sanitizers',
+    'agricultural fertilizer ingredients',
+  ],
+})
 
 const iconBySlug = {
   manufacturing: Factory,
@@ -24,8 +37,20 @@ const industries = INDUSTRY_PAGES.map(industry => ({
 }))
 
 export default function IndustriesPage() {
+  const breadcrumbs = [
+    { name: 'Home', href: '/' },
+    { name: 'Industries', href: '/industries' },
+  ]
+
   return (
     <div className="min-h-screen bg-surface py-12">
+      {/* Breadcrumb Schema */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(breadcrumbSchema(breadcrumbs)),
+        }}
+      />
       <div className="container-xl px-4">
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-16">

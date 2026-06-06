@@ -79,8 +79,8 @@ export async function getProducts(params?: {
   return fetchAPI<PaginatedResponse<ProductListItem>>(
     `/products/?${query}`,
     {},
-    params?.cache || 'no-store',
-    params?.revalidate,
+    params?.cache || 'force-cache',
+    params?.revalidate ?? 60,
   )
 }
 
@@ -139,12 +139,13 @@ export async function getBlogPosts(params?: {
   return fetchAPI<PaginatedResponse<BlogPost>>(
     `/blog/?${query}`,
     {},
-    'no-store',
+    'force-cache',
+    60,
   )
 }
 
 export async function getBlogPostBySlug(slug: string): Promise<BlogPostDetail> {
-  return fetchAPI<BlogPostDetail>(`/blog/${slug}/`, {}, 'no-store')
+  return fetchAPI<BlogPostDetail>(`/blog/${slug}/`, {}, 'force-cache', 60)
 }
 
 export async function getFeaturedBlogPosts(): Promise<BlogPost[]> {
@@ -195,3 +196,40 @@ export async function trackWhatsAppClick(data: {
     body: JSON.stringify(data),
   }, 'no-store')
 }
+
+// ─── Sitemap Pagination Helpers ───────────────────────────────────────────
+
+export async function getAllProducts(): Promise<ProductListItem[]> {
+  const all: ProductListItem[] = []
+  let page = 1
+  let hasMore = true
+  while (hasMore) {
+    try {
+      const data = await getProducts({ page, cache: 'no-store' })
+      all.push(...data.results)
+      hasMore = Boolean(data.next)
+      page++
+    } catch {
+      hasMore = false
+    }
+  }
+  return all
+}
+
+export async function getAllBlogPosts(): Promise<BlogPost[]> {
+  const all: BlogPost[] = []
+  let page = 1
+  let hasMore = true
+  while (hasMore) {
+    try {
+      const data = await getBlogPosts({ page })
+      all.push(...data.results)
+      hasMore = Boolean(data.next)
+      page++
+    } catch {
+      hasMore = false
+    }
+  }
+  return all
+}
+

@@ -108,6 +108,8 @@ export function organizationSchema() {
       SITE_CONFIG.social.linkedin,
       SITE_CONFIG.social.facebook,
       SITE_CONFIG.social.twitter,
+      SITE_CONFIG.social.instagram,
+      SITE_CONFIG.social.tiktok,
     ].filter(Boolean),
   }
 }
@@ -144,7 +146,19 @@ export function productSchema(product: {
   image?: string
   slug: string
   availability?: string
+  sku?: string
+  mpn?: string
+  category_name?: string
+  specifications?: Record<string, string>
 }) {
+  const specProperties = product.specifications
+    ? Object.entries(product.specifications).map(([key, value]) => ({
+        '@type': 'PropertyValue',
+        name: key,
+        value: value,
+      }))
+    : []
+
   return {
     '@context': 'https://schema.org',
     '@type': 'Product',
@@ -156,13 +170,20 @@ export function productSchema(product: {
       '@type': 'Brand',
       name: SITE_CONFIG.name,
     },
+    sku: product.sku || `ZNC-${product.slug.toUpperCase().slice(0, 8)}`,
+    mpn: product.mpn || `MPN-${product.slug.toUpperCase().slice(0, 8)}`,
+    category: product.category_name || 'Industrial Chemicals',
+    ...(specProperties.length > 0 && { additionalProperty: specProperties }),
     offers: {
       '@type': 'Offer',
+      price: '0.00', // quote required
+      priceCurrency: SITE_CONFIG.currency,
+      priceValidUntil: '2027-12-31',
       availability:
         product.availability === 'in_stock'
           ? 'https://schema.org/InStock'
           : 'https://schema.org/OutOfStock',
-      priceCurrency: SITE_CONFIG.currency,
+      url: `${SITE_CONFIG.url}/products/${product.slug}`,
       seller: {
         '@type': 'Organization',
         name: SITE_CONFIG.fullName,
@@ -228,6 +249,43 @@ export function articleSchema(post: {
         '@type': 'ImageObject',
         url: `${SITE_CONFIG.url}/logo.png`,
       },
+    },
+  }
+}
+
+export function websiteSchema() {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: SITE_CONFIG.name,
+    url: SITE_CONFIG.url,
+    potentialAction: {
+      '@type': 'SearchAction',
+      target: {
+        '@type': 'EntryPoint',
+        urlTemplate: `${SITE_CONFIG.url}/products?search={search_term_string}`,
+      },
+      'query-input': 'required name=search_term_string',
+    },
+  }
+}
+
+export function collectionPageSchema(name: string, description: string, path: string, items: { name: string; url: string }[]) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name,
+    description,
+    url: `${SITE_CONFIG.url}${path}`,
+    mainEntity: {
+      '@context': 'https://schema.org',
+      '@type': 'ItemList',
+      itemListElement: items.map((item, index) => ({
+        '@type': 'ListItem',
+        position: index + 1,
+        name: item.name,
+        url: item.url,
+      })),
     },
   }
 }

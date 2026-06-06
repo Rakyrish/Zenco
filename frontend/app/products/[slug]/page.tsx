@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import ProductDetailExperience from '@/components/products/ProductDetailExperience'
-import { getProductBySlug, getProducts } from '@/lib/api'
+import { getProductBySlug, getProducts, getAllProducts } from '@/lib/api'
 import { breadcrumbSchema, faqSchema, generatePageMetadata, productSchema } from '@/lib/metadata'
 import { SITE_CONFIG } from '@/lib/constants'
 
@@ -54,8 +54,8 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
 
 export async function generateStaticParams() {
   try {
-    const products = await getProducts({ page: 1 })
-    return products.results.map(product => ({ slug: product.slug }))
+    const products = await getAllProducts()
+    return products.map(product => ({ slug: product.slug }))
   } catch {
     return []
   }
@@ -85,6 +85,8 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
               image: product.image || undefined,
               slug: product.slug,
               availability: product.availability,
+              category_name: product.category.name,
+              specifications: product.specifications || undefined,
             })),
           }}
         />

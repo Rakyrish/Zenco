@@ -9,6 +9,7 @@ import ProductCard from './ProductCard'
 import ProductGallery from './ProductGallery'
 import { isOutOfStock, whatsappHref } from './product-helpers'
 import { getProducts } from '@/lib/api'
+import { mapSuggestionToRoute } from '@/lib/seo-utils'
 
 function listFromSchema(value: unknown): string[] {
   return Array.isArray(value) ? value.map(String).filter(Boolean) : []
@@ -64,6 +65,7 @@ export default function ProductDetailExperience({ product }: { product: ProductD
   const safety = listFromSchema(schema.safety_considerations)
   const links = listFromSchema(schema.internal_linking_suggestions)
   const faqs = faqsFromSchema(schema.faq_section)
+  const storageConditions = String(schema.storage_conditions || schema.storage_handling || '').trim()
   const explicitTds = firstRecordFromSchema(schema.technical_data_sheet, schema.tds, schema.technical_specifications)
   const fallbackTds: Record<string, string> = Object.fromEntries(
     [
@@ -231,10 +233,28 @@ export default function ProductDetailExperience({ product }: { product: ProductD
           </p>
           {!!links.length && (
             <div className="mt-5 flex flex-wrap gap-2">
-              {links.slice(0, 8).map(link => <span key={link} className="rounded border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs font-semibold text-zinc-600">{link}</span>)}
+              {links.slice(0, 8).map(link => {
+                const routed = mapSuggestionToRoute(link)
+                return (
+                  <Link
+                    key={link}
+                    href={routed.href}
+                    className="rounded border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs font-semibold text-zinc-600 hover:bg-zinc-100 hover:border-accent/40 hover:text-accent transition-all duration-200"
+                  >
+                    {routed.text}
+                  </Link>
+                )
+              })}
             </div>
           )}
         </section>
+
+        {!!storageConditions && (
+          <section className="rounded-lg border border-zinc-200 bg-white p-6 shadow-sm">
+            <h2 className="text-xl font-black text-primary">Storage & Handling</h2>
+            <p className="mt-4 text-sm leading-7 text-zinc-600">{storageConditions}</p>
+          </section>
+        )}
 
         {!!faqs.length && (
           <section className="rounded-lg border border-zinc-200 bg-white p-6 shadow-sm">

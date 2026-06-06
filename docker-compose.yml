@@ -9,8 +9,16 @@ services:
       - media_volume:/app/media
     environment:
       - DJANGO_SETTINGS_MODULE=config.settings.production
-      - DATABASE_URL=postgres://zenco:zencosecret@db:5432/zencodb
+      - DJANGO_DEBUG=False
+      - DB_NAME=zencodb
+      - DB_USER=zenco
+      - DB_PASSWORD=zencosecret
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_SCHEMA=public
       - REDIS_URL=redis://redis:6379/1
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
     env_file:
       - .env
     depends_on:
@@ -25,8 +33,8 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost/api}
-        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost}
+        NEXT_PUBLIC_API_URL: http://localhost/api
+        NEXT_PUBLIC_SITE_URL: http://localhost
         NEXT_PUBLIC_COMPANY_NAME: ${COMPANY_NAME:-}
         NEXT_PUBLIC_COMPANY_DIVISION: ${COMPANY_DIVISION:-}
         NEXT_PUBLIC_COMPANY_FULL_NAME: ${COMPANY_FULL_NAME:-}
@@ -57,8 +65,8 @@ services:
         NEXT_PUBLIC_TWITTER_HANDLE: ${TWITTER_HANDLE:-}
         NEXT_PUBLIC_DEFAULT_KEYWORDS: ${DEFAULT_KEYWORDS:-}
     environment:
-      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost/api}
-      - NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL:-http://localhost}
+      - NEXT_PUBLIC_API_URL=http://localhost/api
+      - NEXT_PUBLIC_SITE_URL=http://localhost
       - NEXT_PUBLIC_COMPANY_NAME=${COMPANY_NAME:-}
       - NEXT_PUBLIC_COMPANY_DIVISION=${COMPANY_DIVISION:-}
       - NEXT_PUBLIC_COMPANY_FULL_NAME=${COMPANY_FULL_NAME:-}
@@ -122,8 +130,16 @@ services:
       - db
     environment:
       - DJANGO_SETTINGS_MODULE=config.settings.production
-      - DATABASE_URL=postgres://zenco:zencosecret@db:5432/zencodb
+      - DJANGO_DEBUG=False
+      - DB_NAME=zencodb
+      - DB_USER=zenco
+      - DB_PASSWORD=zencosecret
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_SCHEMA=public
       - REDIS_URL=redis://redis:6379/1
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
     env_file:
       - .env
 

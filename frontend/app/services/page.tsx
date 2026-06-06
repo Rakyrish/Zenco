@@ -1,9 +1,22 @@
-'use client'
-
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import { ArrowRight, Settings, Truck, HelpCircle, HardHat, ShieldCheck, CheckCircle } from 'lucide-react'
 import { SITE_CONFIG } from '@/lib/constants'
 import { SERVICE_PAGES } from '@/lib/navigation-content'
+import { generatePageMetadata, breadcrumbSchema } from '@/lib/metadata'
+
+export const metadata: Metadata = generatePageMetadata({
+  title: `Value-Added Chemical Services & Technical Support`,
+  description: `From custom formulations and storage safety audits to bulk logistics and laboratory analysis, explore Zenco Systems' professional services for manufacturing and utility teams.`,
+  path: '/services',
+  keywords: [
+    'custom chemical formulation service',
+    'chemical storage audit',
+    'bulk logistics and delivery Kenya',
+    'water treatment dosing support',
+    'chemical analysis and testing',
+  ],
+})
 
 const iconBySlug = {
   'bulk-logistics': Truck,
@@ -19,8 +32,20 @@ const services = SERVICE_PAGES.slice(0, 4).map(service => ({
 }))
 
 export default function ServicesPage() {
+  const breadcrumbs = [
+    { name: 'Home', href: '/' },
+    { name: 'Services', href: '/services' },
+  ]
+
   return (
     <div className="min-h-screen bg-surface py-12">
+      {/* Breadcrumb Schema */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(breadcrumbSchema(breadcrumbs)),
+        }}
+      />
       <div className="container-xl px-4">
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-16">
