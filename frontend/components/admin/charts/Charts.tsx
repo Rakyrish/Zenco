@@ -38,13 +38,13 @@ export function LineChart({ data, color = '#F26C0C', height = 120, showDots = tr
         <path d={areaPath} fill={`url(#grad-${color.replace('#', '')})`} />
         <path d={linePath} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
         {showDots && data.map((d, i) => (
-          <circle key={i} cx={x(i)} cy={y(d.value)} r="3" fill="white" stroke={color} strokeWidth="2" />
+          <circle key={i} cx={x(i)} cy={y(d.value)} r="3" fill="var(--color-surface)" stroke={color} strokeWidth="2" />
         ))}
         {/* X-axis labels (every ~5 points) */}
         {data.map((d, i) => {
           if (data.length <= 8 || i % Math.ceil(data.length / 6) === 0 || i === data.length - 1) {
             return (
-              <text key={i} x={x(i)} y={H - 2} textAnchor="middle" fontSize="8" fill="#9CA3AF">
+              <text key={i} x={x(i)} y={H - 2} textAnchor="middle" fontSize="8" fill="var(--color-text-muted)">
                 {d.date.slice(5)}
               </text>
             )
@@ -103,7 +103,7 @@ export function BarChart({ data, color = '#0C094D', height = 160, horizontal = f
         return (
           <g key={i}>
             <rect x={bX} y={bY} width={barW} height={bH} fill={d.color || color} rx="4" opacity="0.9" />
-            <text x={bX + barW / 2} y={H - 6} textAnchor="middle" fontSize="8" fill="#9CA3AF">
+            <text x={bX + barW / 2} y={H - 6} textAnchor="middle" fontSize="8" fill="var(--color-text-muted)">
               {d.label.slice(0, 6)}
             </text>
           </g>
@@ -146,14 +146,14 @@ export function DonutChart({ data, size = 140, thickness = 28, centerLabel, cent
         {slices.map((s, i) => (
           <path key={i} d={s.d} fill={s.color} opacity="0.9" className="transition-opacity hover:opacity-100" />
         ))}
-        <circle cx={cx} cy={cy} r={r - thickness / 2} fill="currentColor" className="text-white dark:text-gray-900" />
+        <circle cx={cx} cy={cy} r={r - thickness / 2} fill="var(--color-surface)" />
         {centerValue !== undefined && (
           <>
             <text x={cx} y={cy - 4} textAnchor="middle" fontSize="14" fontWeight="bold" fill="currentColor" className="fill-gray-800 dark:fill-white">
               {centerValue}
             </text>
             {centerLabel && (
-              <text x={cx} y={cy + 12} textAnchor="middle" fontSize="8" fill="#9CA3AF">{centerLabel}</text>
+              <text x={cx} y={cy + 12} textAnchor="middle" fontSize="8" fill="var(--color-text-muted)">{centerLabel}</text>
             )}
           </>
         )}

@@ -14,6 +14,30 @@ function listFromSchema(value: unknown): string[] {
   return Array.isArray(value) ? value.map(String).filter(Boolean) : []
 }
 
+function recordFromSchema(value: unknown): Record<string, string> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {}
+  return Object.fromEntries(
+    Object.entries(value as Record<string, unknown>)
+      .map(([key, item]) => [key, String(item ?? '').trim()])
+      .filter(([, item]) => item),
+  )
+}
+
+function compactText(value: string, maxLength = 260) {
+  const text = value.replace(/\s+/g, ' ').trim()
+  if (text.length <= maxLength) return text
+  const sentence = text.slice(0, maxLength).match(/^.*?[.!?](?=\s|$)/)?.[0]
+  return sentence || `${text.slice(0, maxLength).replace(/\s+\S*$/, '')}...`
+}
+
+function firstRecordFromSchema(...values: unknown[]): Record<string, string> {
+  for (const value of values) {
+    const record = recordFromSchema(value)
+    if (Object.keys(record).length) return record
+  }
+  return {}
+}
+
 function faqsFromSchema(value: unknown) {
   if (!Array.isArray(value)) return []
   return value
@@ -40,6 +64,19 @@ export default function ProductDetailExperience({ product }: { product: ProductD
   const safety = listFromSchema(schema.safety_considerations)
   const links = listFromSchema(schema.internal_linking_suggestions)
   const faqs = faqsFromSchema(schema.faq_section)
+  const explicitTds = firstRecordFromSchema(schema.technical_data_sheet, schema.tds, schema.technical_specifications)
+  const fallbackTds: Record<string, string> = Object.fromEntries(
+    [
+      ['Chemical Name', schema.chemical_name],
+      ['Formula', schema.formula],
+      ['Appearance', schema.appearance],
+      ['CAS Number', schema.cas_number],
+      ['Purity', schema.purity],
+      ['Grade', schema.grade],
+    ].map(([key, value]) => [key, String(value || '').trim()]).filter(([, value]) => value),
+  )
+  const technicalDataSheet: Record<string, string> = Object.keys(explicitTds).length ? explicitTds : fallbackTds
+  const displayDescription = compactText(product.description || product.short_description)
   const whatsappProduct = {
     name: product.name,
     slug: product.slug,
@@ -90,7 +127,7 @@ export default function ProductDetailExperience({ product }: { product: ProductD
 
               <h1 className="max-w-3xl text-3xl font-black leading-tight text-primary md:text-5xl">{product.name}</h1>
               <p className="mt-4 max-w-3xl text-lg font-semibold leading-relaxed text-zinc-600">{product.short_description}</p>
-              <p className="mt-5 max-w-3xl text-sm leading-7 text-zinc-600">{product.description}</p>
+              <p className="mt-5 max-w-3xl text-sm leading-7 text-zinc-600">{displayDescription}</p>
 
               <div className="mt-6 grid gap-3 sm:grid-cols-3">
                 <a href={whatsappHref(whatsappProduct, 'product detail hero inquiry')} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-green-600 px-4 text-sm font-extrabold text-white hover:bg-green-700">
@@ -155,6 +192,20 @@ export default function ProductDetailExperience({ product }: { product: ProductD
             </ul>
           </div>
         </section>
+
+        {!!Object.keys(technicalDataSheet).length && (
+          <section className="rounded-lg border border-zinc-200 bg-white p-6 shadow-sm">
+            <h2 className="text-xl font-black text-primary">Technical Data Sheet (TDS)</h2>
+            <div className="mt-5 divide-y divide-zinc-100">
+              {Object.entries(technicalDataSheet).map(([key, value]) => (
+                <div key={key} className="grid grid-cols-[0.9fr_1.1fr] gap-4 py-3 text-sm">
+                  <span className="font-semibold text-zinc-500">{key}</span>
+                  <span className="font-bold text-primary">{value}</span>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         {(benefits.length || features.length || industries.length) && (
           <section className="grid gap-6 md:grid-cols-3">

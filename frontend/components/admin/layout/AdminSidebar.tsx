@@ -88,7 +88,8 @@ export default function AdminSidebar({ mobileOpen, onMobileClose }: AdminSidebar
       <aside
         className={[
           'fixed top-0 left-0 h-full z-50 flex flex-col',
-          'bg-[#0C094D] dark:bg-[#06051e] border-r border-white/10',
+          'bg-[#0C094D] dark:bg-[#111827] border-r border-white/10 dark:border-[#2f3b52]',
+          'shadow-2xl shadow-[#0C094D]/15 dark:shadow-black/30',
           'transition-all duration-300 ease-in-out',
           collapsed ? 'w-[72px]' : 'w-64',
           // Mobile: transform-based show/hide
@@ -139,8 +140,8 @@ export default function AdminSidebar({ mobileOpen, onMobileClose }: AdminSidebar
                           'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150',
                           'group relative',
                           active
-                            ? 'bg-[#F26C0C] text-white shadow-lg shadow-orange-900/30'
-                            : 'text-white/60 hover:text-white hover:bg-white/10',
+                            ? 'bg-[#F26C0C] text-white shadow-lg shadow-[#F26C0C]/25 dark:shadow-[0_0_24px_rgba(255,140,42,0.32)]'
+                            : 'text-white/65 hover:text-white hover:bg-white/10 dark:hover:bg-[#202b3f]',
                           collapsed ? 'justify-center' : '',
                         ].join(' ')}
                       >

@@ -1,24 +1,11 @@
 import type { Metadata } from 'next'
-import { Inter, Alice } from 'next/font/google'
 import { SITE_CONFIG } from '@/lib/constants'
 import { organizationSchema, localBusinessSchema } from '@/lib/metadata'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import ChatbotWidget from '@/components/shared/ChatbotWidget'
+import ThemeProvider from '@/components/shared/ThemeProvider'
 import './globals.css'
-
-const inter = Inter({
-  subsets: ['latin'],
-  variable: '--font-inter',
-  display: 'swap',
-})
-
-const alice = Alice({
-  subsets: ['latin'],
-  weight: ['400'],
-  variable: '--font-alice',
-  display: 'swap',
-})
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_CONFIG.url),
@@ -80,7 +67,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className={`${inter.variable} ${alice.variable}`}>
+    <html lang="en" suppressHydrationWarning>
       <head>
         {/* Inline script to prevent theme flashing */}
         <script
@@ -91,6 +78,7 @@ export default function RootLayout({
                   const stored = localStorage.getItem('theme');
                   const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
                   const theme = stored || (prefersDark ? 'dark' : 'light');
+                  document.documentElement.dataset.theme = theme;
                   document.documentElement.style.colorScheme = theme;
                   if (theme === 'dark') {
                     document.documentElement.classList.add('dark');
@@ -121,13 +109,15 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href={SITE_CONFIG.apiUrl} />
       </head>
-      <body className="font-sans antialiased bg-surface dark:bg-[#070619] text-gray-900 dark:text-gray-100 transition-colors duration-200">
-        <Header />
-        <main id="main-content" className="min-h-screen">
-          {children}
-        </main>
-        <Footer />
-        <ChatbotWidget />
+      <body className="font-sans antialiased bg-surface text-gray-900 transition-colors duration-300 ease-in-out">
+        <ThemeProvider>
+          <Header />
+          <main id="main-content" className="min-h-screen">
+            {children}
+          </main>
+          <Footer />
+          <ChatbotWidget />
+        </ThemeProvider>
       </body>
     </html>
   )

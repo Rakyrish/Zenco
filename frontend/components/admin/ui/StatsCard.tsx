@@ -25,7 +25,7 @@ export default function StatsCard({ label, value, icon, color = 'blue', trend, s
 
   if (loading) {
     return (
-      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-5 shadow-sm animate-pulse">
+      <div className="bg-white dark:bg-[#1a2234] rounded-2xl border border-gray-100 dark:border-[#2f3b52] p-5 shadow-sm dark:shadow-card-dark animate-pulse">
         <div className="flex items-start justify-between">
           <div className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-800" />
           <div className="w-16 h-4 bg-gray-100 dark:bg-gray-800 rounded" />
@@ -43,8 +43,8 @@ export default function StatsCard({ label, value, icon, color = 'blue', trend, s
       onClick={onClick}
       className={[
         'bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-5 shadow-sm',
-        'transition-all duration-200',
-        onClick ? 'cursor-pointer hover:shadow-md hover:border-gray-200 dark:hover:border-gray-700 hover:-translate-y-0.5' : '',
+        'dark:bg-[#1a2234] dark:border-[#2f3b52] dark:shadow-card-dark transition-all duration-300 ease-in-out',
+        onClick ? 'cursor-pointer hover:shadow-md hover:border-gray-200 dark:hover:border-[#3c4b66] hover:-translate-y-0.5 dark:hover:shadow-card-dark-hover' : '',
       ].join(' ')}
     >
       <div className="flex items-start justify-between gap-3">

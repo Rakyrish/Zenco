@@ -39,17 +39,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   if (!hydrated) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
+      <div className="min-h-screen bg-[#f8fafc] dark:bg-[#0a0f1c] flex items-center justify-center transition-colors duration-300">
         <div className="flex flex-col items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-[#F26C0C] animate-pulse" />
-          <p className="text-sm text-gray-400">Loading dashboard…</p>
+          <p className="text-sm text-gray-500 dark:text-[#94a3b8]">Loading dashboard...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex">
+    <div className="min-h-screen bg-[#f8fafc] text-[#0f172a] dark:bg-[#0a0f1c] dark:text-[#f8fafc] flex transition-colors duration-300">
       {/* Sidebar */}
       <AdminSidebar
         mobileOpen={mobileOpen}

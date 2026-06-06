@@ -1,43 +1,38 @@
 'use client'
 
-import { useState, useEffect } from 'react'
 import { Sun, Moon } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { useTheme } from './ThemeProvider'
 
-export default function ThemeToggle() {
-  const [theme, setTheme] = useState<'light' | 'dark'>('light')
+interface ThemeToggleProps {
+  variant?: 'public' | 'admin'
+}
 
-  useEffect(() => {
-    const stored = localStorage.getItem('theme') as 'light' | 'dark' | null
-    const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-    const initialTheme = stored || (systemDark ? 'dark' : 'light')
-    document.documentElement.classList.toggle('dark', initialTheme === 'dark')
-    document.documentElement.style.colorScheme = initialTheme
-    setTheme(initialTheme)
-  }, [])
+export default function ThemeToggle({ variant = 'public' }: ThemeToggleProps) {
+  const { theme, toggleTheme, mounted } = useTheme()
+  const isDark = mounted && theme === 'dark'
 
-  const toggleTheme = () => {
-    const nextTheme = theme === 'light' ? 'dark' : 'light'
-    setTheme(nextTheme)
-    
-    if (nextTheme === 'dark') {
-      document.documentElement.classList.add('dark')
-    } else {
-      document.documentElement.classList.remove('dark')
-    }
-    document.documentElement.style.colorScheme = nextTheme
-    localStorage.setItem('theme', nextTheme)
+  const classes = {
+    public: 'text-white/75 hover:text-white hover:bg-white/10 focus-visible:ring-white/40',
+    admin: 'text-gray-500 hover:text-gray-800 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-white dark:hover:bg-white/10 focus-visible:ring-[#F26C0C]/50',
   }
 
   return (
     <button
       onClick={toggleTheme}
-      className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition-all flex items-center justify-center"
-      aria-label={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
+      className={cn(
+        'inline-flex h-9 w-9 items-center justify-center rounded-lg transition-all duration-300 ease-in-out',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent',
+        'hover:scale-105 active:scale-95',
+        classes[variant],
+      )}
+      aria-label={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+      title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
     >
-      {theme === 'light' ? (
-        <Moon size={18} className="transition-transform duration-300 hover:rotate-12" />
+      {isDark ? (
+        <Sun size={18} className="transition-transform duration-300 rotate-0" />
       ) : (
-        <Sun size={18} className="transition-transform duration-300 hover:scale-110" />
+        <Moon size={18} className="transition-transform duration-300" />
       )}
     </button>
   )
