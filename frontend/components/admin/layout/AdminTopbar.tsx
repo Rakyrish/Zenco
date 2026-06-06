@@ -1,13 +1,14 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import {
-  Menu, Bell, Sun, Moon, LogOut, User, ChevronDown,
+  Menu, Bell, LogOut, User, ChevronDown,
   Settings, ExternalLink, Search,
 } from 'lucide-react'
 import { clearAdminTokens, getAdminUser } from '@/lib/admin/auth'
+import ThemeToggle from '@/components/shared/ThemeToggle'
 
 // Breadcrumb map
 const LABELS: Record<string, string> = {
@@ -43,27 +44,9 @@ interface AdminTopbarProps {
 
 export default function AdminTopbar({ onMenuClick }: AdminTopbarProps) {
   const router = useRouter()
-  const [theme, setTheme] = useState<'light' | 'dark'>('light')
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const breadcrumbs = useBreadcrumbs()
   const user = getAdminUser()
-
-  useEffect(() => {
-    const stored = localStorage.getItem('theme') as 'light' | 'dark' | null
-    const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-    const initial = stored || (systemDark ? 'dark' : 'light')
-    document.documentElement.classList.toggle('dark', initial === 'dark')
-    document.documentElement.style.colorScheme = initial
-    setTheme(initial)
-  }, [])
-
-  const toggleTheme = () => {
-    const next = theme === 'dark' ? 'light' : 'dark'
-    setTheme(next)
-    document.documentElement.classList.toggle('dark', next === 'dark')
-    document.documentElement.style.colorScheme = next
-    localStorage.setItem('theme', next)
-  }
 
   const handleLogout = () => {
     clearAdminTokens()
@@ -75,7 +58,7 @@ export default function AdminTopbar({ onMenuClick }: AdminTopbarProps) {
     : 'AD'
 
   return (
-    <header className="h-16 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 flex items-center gap-3 px-4 lg:px-6 flex-shrink-0 sticky top-0 z-30">
+    <header className="h-16 bg-white/90 dark:bg-[rgba(17,24,39,0.8)] backdrop-blur-xl border-b border-gray-100 dark:border-[#2f3b52] shadow-sm dark:shadow-[0_12px_34px_rgba(0,0,0,0.22)] flex items-center gap-3 px-4 lg:px-6 flex-shrink-0 sticky top-0 z-30 transition-all duration-300">
 
       {/* Mobile menu toggle */}
       <button
@@ -123,13 +106,7 @@ export default function AdminTopbar({ onMenuClick }: AdminTopbarProps) {
         </Link>
 
         {/* Dark mode toggle */}
-        <button
-          onClick={toggleTheme}
-          className="p-2 rounded-lg text-gray-500 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-          aria-label="Toggle theme"
-        >
-          {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-        </button>
+        <ThemeToggle variant="admin" />
 
         {/* Notifications */}
         <button

@@ -27,22 +27,13 @@ export function generatePageMetadata({
   const url = `${SITE_CONFIG.url}${path}`
   const ogImage = image || `${SITE_CONFIG.url}/og-image.png`
 
-  const defaultKeywords = [
-    'industrial chemicals Kenya',
-    'chemical supplier East Africa',
-    'water treatment chemicals Nairobi',
-    'solvents Kenya',
-    'industrial chemicals supplier',
-    'Zenco Systems Ltd',
-  ]
-
   return {
-    title: `${title} | Zenco Systems Ltd – Chemical Division`,
+    title: `${title} | ${SITE_CONFIG.fullName}`,
     description,
-    keywords: [...defaultKeywords, ...keywords].join(', '),
-    authors: [{ name: 'Zenco Systems Ltd', url: SITE_CONFIG.url }],
-    creator: 'Zenco Systems Ltd',
-    publisher: 'Zenco Systems Ltd',
+    keywords: [...SITE_CONFIG.defaultKeywords, ...keywords].join(', '),
+    authors: [{ name: SITE_CONFIG.name, url: SITE_CONFIG.url }],
+    creator: SITE_CONFIG.name,
+    publisher: SITE_CONFIG.name,
     metadataBase: new URL(SITE_CONFIG.url),
     alternates: {
       canonical: url,
@@ -61,18 +52,18 @@ export function generatePageMetadata({
           },
         },
     openGraph: {
-      title: `${title} | Zenco Systems Ltd`,
+      title: `${title} | ${SITE_CONFIG.name}`,
       description,
       url,
       siteName: SITE_CONFIG.fullName,
       type: type === 'product' ? 'website' : type,
-      locale: 'en_KE',
+      locale: SITE_CONFIG.locale,
       images: [
         {
           url: ogImage,
           width: 1200,
           height: 630,
-          alt: `${title} – Zenco Systems Ltd`,
+          alt: `${title} - ${SITE_CONFIG.name}`,
         },
       ],
       ...(publishedTime && { publishedTime }),
@@ -80,11 +71,11 @@ export function generatePageMetadata({
     },
     twitter: {
       card: 'summary_large_image',
-      title: `${title} | Zenco Systems Ltd`,
+      title: `${title} | ${SITE_CONFIG.name}`,
       description,
       images: [ogImage],
-      site: '@zencosystems',
-      creator: '@zencosystems',
+      site: SITE_CONFIG.twitterHandle,
+      creator: SITE_CONFIG.twitterHandle,
     },
   }
 }
@@ -103,7 +94,7 @@ export function organizationSchema() {
       '@type': 'ContactPoint',
       telephone: SITE_CONFIG.phone,
       contactType: 'customer service',
-      areaServed: 'East Africa',
+      areaServed: SITE_CONFIG.serviceArea,
       availableLanguage: 'English',
     },
     address: {
@@ -117,6 +108,8 @@ export function organizationSchema() {
       SITE_CONFIG.social.linkedin,
       SITE_CONFIG.social.facebook,
       SITE_CONFIG.social.twitter,
+      SITE_CONFIG.social.instagram,
+      SITE_CONFIG.social.tiktok,
     ].filter(Boolean),
   }
 }
@@ -130,19 +123,19 @@ export function localBusinessSchema() {
     telephone: SITE_CONFIG.phone,
     email: SITE_CONFIG.email,
     description: SITE_CONFIG.description,
-    priceRange: 'KES',
-    currenciesAccepted: 'KES, USD',
-    openingHours: 'Mo-Fr 08:00-17:00',
+    priceRange: SITE_CONFIG.currency,
+    currenciesAccepted: SITE_CONFIG.acceptedCurrencies,
+    openingHours: SITE_CONFIG.openingHours,
     address: {
       '@type': 'PostalAddress',
       streetAddress: SITE_CONFIG.address.street,
       addressLocality: SITE_CONFIG.address.city,
-      addressCountry: 'KE',
+      addressCountry: SITE_CONFIG.address.country,
     },
     geo: {
       '@type': 'GeoCoordinates',
-      latitude: '-1.2921',
-      longitude: '36.8219',
+      latitude: SITE_CONFIG.coordinates.latitude,
+      longitude: SITE_CONFIG.coordinates.longitude,
     },
   }
 }
@@ -153,7 +146,19 @@ export function productSchema(product: {
   image?: string
   slug: string
   availability?: string
+  sku?: string
+  mpn?: string
+  category_name?: string
+  specifications?: Record<string, string>
 }) {
+  const specProperties = product.specifications
+    ? Object.entries(product.specifications).map(([key, value]) => ({
+        '@type': 'PropertyValue',
+        name: key,
+        value: value,
+      }))
+    : []
+
   return {
     '@context': 'https://schema.org',
     '@type': 'Product',
@@ -163,15 +168,22 @@ export function productSchema(product: {
     image: product.image || `${SITE_CONFIG.url}/og-image.png`,
     brand: {
       '@type': 'Brand',
-      name: 'Zenco Systems Ltd',
+      name: SITE_CONFIG.name,
     },
+    sku: product.sku || `ZNC-${product.slug.toUpperCase().slice(0, 8)}`,
+    mpn: product.mpn || `MPN-${product.slug.toUpperCase().slice(0, 8)}`,
+    category: product.category_name || 'Industrial Chemicals',
+    ...(specProperties.length > 0 && { additionalProperty: specProperties }),
     offers: {
       '@type': 'Offer',
+      price: '0.00', // quote required
+      priceCurrency: SITE_CONFIG.currency,
+      priceValidUntil: '2027-12-31',
       availability:
         product.availability === 'in_stock'
           ? 'https://schema.org/InStock'
           : 'https://schema.org/OutOfStock',
-      priceCurrency: 'KES',
+      url: `${SITE_CONFIG.url}/products/${product.slug}`,
       seller: {
         '@type': 'Organization',
         name: SITE_CONFIG.fullName,
@@ -237,6 +249,43 @@ export function articleSchema(post: {
         '@type': 'ImageObject',
         url: `${SITE_CONFIG.url}/logo.png`,
       },
+    },
+  }
+}
+
+export function websiteSchema() {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: SITE_CONFIG.name,
+    url: SITE_CONFIG.url,
+    potentialAction: {
+      '@type': 'SearchAction',
+      target: {
+        '@type': 'EntryPoint',
+        urlTemplate: `${SITE_CONFIG.url}/products?search={search_term_string}`,
+      },
+      'query-input': 'required name=search_term_string',
+    },
+  }
+}
+
+export function collectionPageSchema(name: string, description: string, path: string, items: { name: string; url: string }[]) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name,
+    description,
+    url: `${SITE_CONFIG.url}${path}`,
+    mainEntity: {
+      '@context': 'https://schema.org',
+      '@type': 'ItemList',
+      itemListElement: items.map((item, index) => ({
+        '@type': 'ListItem',
+        position: index + 1,
+        name: item.name,
+        url: item.url,
+      })),
     },
   }
 }

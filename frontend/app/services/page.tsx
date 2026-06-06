@@ -1,66 +1,55 @@
-'use client'
-
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import { ArrowRight, Settings, Truck, HelpCircle, HardHat, ShieldCheck, CheckCircle } from 'lucide-react'
+import { SITE_CONFIG } from '@/lib/constants'
+import { SERVICE_PAGES } from '@/lib/navigation-content'
+import { generatePageMetadata, breadcrumbSchema } from '@/lib/metadata'
 
-const services = [
-  {
-    icon: Truck,
-    title: 'Bulk Chemical Transport & Logistics',
-    tagline: 'Safe, Compliant, and Timely Delivery Across East Africa',
-    desc: 'Zenco Systems owns and operates a specialized logistics fleet optimized for bulk liquids, hazardous chemicals, and specialized powders. All vehicles are NEMA approved and driven by ADR-certified chemical handling logistics professionals.',
-    features: [
-      'ADR-compliant tanker configurations.',
-      'GPS real-time shipment route tracking.',
-      'Customs clearance handling for regional transit (Uganda, Tanzania, Rwanda).',
-      'Emergency response protocols in coordination with local safety councils.',
-    ],
-  },
-  {
-    icon: Settings,
-    title: 'Custom blending & Formulations',
-    tagline: 'Tailored Densities, Concentrations, and Chemical Mixes',
-    desc: 'Our modern in-house chemical formulation facility allows chemical engineers to blend products to exact client specifications. We assist with active ingredient concentration ratios, solvent blends, and color additives.',
-    features: [
-      'Viscosity and pH adjustments to client limits.',
-      'Standard batch analysis certificates (CoA) provided.',
-      'Flexible packaging solutions: IBCs, 200L drums, or tanker loads.',
-      'Confidentiality and IP protection for custom formulations.',
-    ],
-  },
-  {
-    icon: HardHat,
-    title: 'Safety Compliance & Audits',
-    tagline: 'Facility Preparedness, NEMA Compliance, and Employee Training',
-    desc: 'Protecting your workforce and environment is paramount. Zenco Systems chemical safety experts provide onsite storage audits, compatibility charts, spill management advice, and custom chemical handler certification courses.',
-    features: [
-      'NEMA and OSH safety standard compliance evaluations.',
-      'Comprehensive MSDS sheets database updates.',
-      'Emergency spill-kit training & safety drills.',
-      'Chemical segregation and compatibility reviews.',
-    ],
-  },
-  {
-    icon: HelpCircle,
-    title: 'Quality Testing & Support',
-    tagline: 'Analytical Verification and Laboratory Optimization',
-    desc: 'Not sure why a formulation is underperforming? Our laboratory provides full testing services for chemical purity, dilution curves, stability studies, and contamination verification.',
-    features: [
-      'Fully equipped chemical testing laboratory.',
-      'Dilution curve assessments for wastewater flocculants.',
-      'Active content titration analysis.',
-      'Corrosion and compatibility trials.',
-    ],
-  },
-]
+export const metadata: Metadata = generatePageMetadata({
+  title: `Value-Added Chemical Services & Technical Support`,
+  description: `From custom formulations and storage safety audits to bulk logistics and laboratory analysis, explore Zenco Systems' professional services for manufacturing and utility teams.`,
+  path: '/services',
+  keywords: [
+    'custom chemical formulation service',
+    'chemical storage audit',
+    'bulk logistics and delivery Kenya',
+    'water treatment dosing support',
+    'chemical analysis and testing',
+  ],
+})
+
+const iconBySlug = {
+  'bulk-logistics': Truck,
+  'custom-formulations': Settings,
+  'onsite-audits': HardHat,
+  'technical-support': HelpCircle,
+} as const
+
+const services = SERVICE_PAGES.slice(0, 4).map(service => ({
+  ...service,
+  desc: service.description,
+  icon: iconBySlug[service.slug as keyof typeof iconBySlug] || HelpCircle,
+}))
 
 export default function ServicesPage() {
+  const breadcrumbs = [
+    { name: 'Home', href: '/' },
+    { name: 'Services', href: '/services' },
+  ]
+
   return (
     <div className="min-h-screen bg-surface py-12">
+      {/* Breadcrumb Schema */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(breadcrumbSchema(breadcrumbs)),
+        }}
+      />
       <div className="container-xl px-4">
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <span className="section-tag">Zenco Services</span>
+          <span className="section-tag">{SITE_CONFIG.name} Services</span>
           <h1 className="text-3xl md:text-5xl font-bold text-primary mb-3">Value-Added Solutions</h1>
           <p className="text-gray-500 leading-relaxed">
             Beyond distribution, we provide full technical support, compliance expertise, and high-capacity logistics to streamline manufacturing setups.
@@ -94,6 +83,13 @@ export default function ServicesPage() {
                     className="inline-flex items-center gap-2 btn-primary"
                   >
                     Request Technical Help
+                    <ArrowRight size={16} />
+                  </Link>
+                  <Link
+                    href={`/services/${serv.slug}`}
+                    className="ml-3 inline-flex items-center gap-2 rounded-md border border-zinc-200 px-4 py-3 text-sm font-black text-primary hover:border-accent hover:text-accent"
+                  >
+                    View Service Details
                     <ArrowRight size={16} />
                   </Link>
                 </div>

@@ -9,16 +9,41 @@ import ProductCard from './ProductCard'
 import ProductGallery from './ProductGallery'
 import { isOutOfStock, whatsappHref } from './product-helpers'
 import { getProducts } from '@/lib/api'
+import { mapSuggestionToRoute } from '@/lib/seo-utils'
 
 function listFromSchema(value: unknown): string[] {
   return Array.isArray(value) ? value.map(String).filter(Boolean) : []
+}
+
+function recordFromSchema(value: unknown): Record<string, string> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {}
+  return Object.fromEntries(
+    Object.entries(value as Record<string, unknown>)
+      .map(([key, item]) => [key, String(item ?? '').trim()])
+      .filter(([, item]) => item),
+  )
+}
+
+function compactText(value: string, maxLength = 260) {
+  const text = value.replace(/\s+/g, ' ').trim()
+  if (text.length <= maxLength) return text
+  const sentence = text.slice(0, maxLength).match(/^.*?[.!?](?=\s|$)/)?.[0]
+  return sentence || `${text.slice(0, maxLength).replace(/\s+\S*$/, '')}...`
+}
+
+function firstRecordFromSchema(...values: unknown[]): Record<string, string> {
+  for (const value of values) {
+    const record = recordFromSchema(value)
+    if (Object.keys(record).length) return record
+  }
+  return {}
 }
 
 function faqsFromSchema(value: unknown) {
   if (!Array.isArray(value)) return []
   return value
     .map(item => {
-      if (typeof item === 'string') return { question: item, answer: 'Contact Zenco Chemicals Ltd sales for product handling, packaging, and availability guidance.' }
+      if (typeof item === 'string') return { question: item, answer: `Contact ${SITE_CONFIG.name} sales for product handling, packaging, and availability guidance.` }
       if (item && typeof item === 'object') {
         const data = item as Record<string, unknown>
         return { question: String(data.question || ''), answer: String(data.answer || '') }
@@ -40,6 +65,20 @@ export default function ProductDetailExperience({ product }: { product: ProductD
   const safety = listFromSchema(schema.safety_considerations)
   const links = listFromSchema(schema.internal_linking_suggestions)
   const faqs = faqsFromSchema(schema.faq_section)
+  const storageConditions = String(schema.storage_conditions || schema.storage_handling || '').trim()
+  const explicitTds = firstRecordFromSchema(schema.technical_data_sheet, schema.tds, schema.technical_specifications)
+  const fallbackTds: Record<string, string> = Object.fromEntries(
+    [
+      ['Chemical Name', schema.chemical_name],
+      ['Formula', schema.formula],
+      ['Appearance', schema.appearance],
+      ['CAS Number', schema.cas_number],
+      ['Purity', schema.purity],
+      ['Grade', schema.grade],
+    ].map(([key, value]) => [key, String(value || '').trim()]).filter(([, value]) => value),
+  )
+  const technicalDataSheet: Record<string, string> = Object.keys(explicitTds).length ? explicitTds : fallbackTds
+  const displayDescription = compactText(product.description || product.short_description)
   const whatsappProduct = {
     name: product.name,
     slug: product.slug,
@@ -90,7 +129,7 @@ export default function ProductDetailExperience({ product }: { product: ProductD
 
               <h1 className="max-w-3xl text-3xl font-black leading-tight text-primary md:text-5xl">{product.name}</h1>
               <p className="mt-4 max-w-3xl text-lg font-semibold leading-relaxed text-zinc-600">{product.short_description}</p>
-              <p className="mt-5 max-w-3xl text-sm leading-7 text-zinc-600">{product.description}</p>
+              <p className="mt-5 max-w-3xl text-sm leading-7 text-zinc-600">{displayDescription}</p>
 
               <div className="mt-6 grid gap-3 sm:grid-cols-3">
                 <a href={whatsappHref(whatsappProduct, 'product detail hero inquiry')} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-green-600 px-4 text-sm font-extrabold text-white hover:bg-green-700">
@@ -120,8 +159,8 @@ export default function ProductDetailExperience({ product }: { product: ProductD
         <section className="grid gap-4 md:grid-cols-3">
           {[
             ['Packaging', product.packaging || 'Confirm with sales'],
-            ['Supply Region', product.regions_available.join(', ') || 'East Africa'],
-            ['Supplier', 'Zenco Chemicals Ltd'],
+            ['Supply Region', product.regions_available.join(', ') || SITE_CONFIG.serviceArea],
+            ['Supplier', SITE_CONFIG.name],
           ].map(([labelText, value]) => (
             <div key={labelText} className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
               <p className="text-xs font-extrabold uppercase tracking-widest text-zinc-400">{labelText}</p>
@@ -156,6 +195,20 @@ export default function ProductDetailExperience({ product }: { product: ProductD
           </div>
         </section>
 
+        {!!Object.keys(technicalDataSheet).length && (
+          <section className="rounded-lg border border-zinc-200 bg-white p-6 shadow-sm">
+            <h2 className="text-xl font-black text-primary">Technical Data Sheet (TDS)</h2>
+            <div className="mt-5 divide-y divide-zinc-100">
+              {Object.entries(technicalDataSheet).map(([key, value]) => (
+                <div key={key} className="grid grid-cols-[0.9fr_1.1fr] gap-4 py-3 text-sm">
+                  <span className="font-semibold text-zinc-500">{key}</span>
+                  <span className="font-bold text-primary">{value}</span>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
         {(benefits.length || features.length || industries.length) && (
           <section className="grid gap-6 md:grid-cols-3">
             {[
@@ -176,14 +229,32 @@ export default function ProductDetailExperience({ product }: { product: ProductD
         <section className="rounded-lg border border-zinc-200 bg-white p-6 shadow-sm">
           <h2 className="text-xl font-black text-primary">Product Overview</h2>
           <p className="mt-4 text-sm leading-7 text-zinc-600">
-            {product.name} is supplied by Zenco Chemicals Ltd for industrial buyers, distributors, laboratories, manufacturers, and procurement teams across Kenya and East Africa. Zenco Chemicals Ltd supports quotation requests, packaging confirmation, product availability checks, and regional supply coordination for this product category.
+            {product.name} is supplied by {SITE_CONFIG.name} for industrial buyers, distributors, laboratories, manufacturers, and procurement teams across {SITE_CONFIG.serviceArea}. {SITE_CONFIG.name} supports quotation requests, packaging confirmation, product availability checks, and regional supply coordination for this product category.
           </p>
           {!!links.length && (
             <div className="mt-5 flex flex-wrap gap-2">
-              {links.slice(0, 8).map(link => <span key={link} className="rounded border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs font-semibold text-zinc-600">{link}</span>)}
+              {links.slice(0, 8).map(link => {
+                const routed = mapSuggestionToRoute(link)
+                return (
+                  <Link
+                    key={link}
+                    href={routed.href}
+                    className="rounded border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs font-semibold text-zinc-600 hover:bg-zinc-100 hover:border-accent/40 hover:text-accent transition-all duration-200"
+                  >
+                    {routed.text}
+                  </Link>
+                )
+              })}
             </div>
           )}
         </section>
+
+        {!!storageConditions && (
+          <section className="rounded-lg border border-zinc-200 bg-white p-6 shadow-sm">
+            <h2 className="text-xl font-black text-primary">Storage & Handling</h2>
+            <p className="mt-4 text-sm leading-7 text-zinc-600">{storageConditions}</p>
+          </section>
+        )}
 
         {!!faqs.length && (
           <section className="rounded-lg border border-zinc-200 bg-white p-6 shadow-sm">
@@ -243,7 +314,7 @@ export default function ProductDetailExperience({ product }: { product: ProductD
             <div className="mb-5 flex items-end justify-between gap-4">
               <div>
                 <h2 className="text-2xl font-black text-primary">Featured Products</h2>
-                <p className="mt-1 text-sm text-zinc-500">High-priority products from the Zenco Chemicals Ltd catalog.</p>
+                <p className="mt-1 text-sm text-zinc-500">High-priority products from the {SITE_CONFIG.name} catalog.</p>
               </div>
               <Link href="/products" className="text-sm font-bold text-accent hover:text-primary">Browse catalog</Link>
             </div>

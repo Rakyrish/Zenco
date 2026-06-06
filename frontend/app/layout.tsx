@@ -1,47 +1,23 @@
 import type { Metadata } from 'next'
-import { Inter, Alice } from 'next/font/google'
 import { SITE_CONFIG } from '@/lib/constants'
-import { organizationSchema, localBusinessSchema } from '@/lib/metadata'
+import { organizationSchema, localBusinessSchema, websiteSchema } from '@/lib/metadata'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import ChatbotWidget from '@/components/shared/ChatbotWidget'
+import ThemeProvider from '@/components/shared/ThemeProvider'
 import './globals.css'
-
-const inter = Inter({
-  subsets: ['latin'],
-  variable: '--font-inter',
-  display: 'swap',
-})
-
-const alice = Alice({
-  subsets: ['latin'],
-  weight: ['400'],
-  variable: '--font-alice',
-  display: 'swap',
-})
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_CONFIG.url),
   title: {
-    default: `${SITE_CONFIG.fullName} | Industrial Chemical Supplier in Kenya`,
-    template: `%s | Zenco Systems Ltd – Chemical Division`,
+    default: `${SITE_CONFIG.fullName} | ${SITE_CONFIG.tagline}`,
+    template: `%s | ${SITE_CONFIG.fullName}`,
   },
   description: SITE_CONFIG.description,
-  keywords: [
-    'industrial chemicals Kenya',
-    'chemical supplier Nairobi',
-    'water treatment chemicals East Africa',
-    'solvents Kenya',
-    'paints coatings Kenya',
-    'agricultural chemicals Kenya',
-    'industrial cleaning chemicals',
-    'Zenco Systems Ltd',
-    'chemical division Kenya',
-    'bulk chemicals supplier',
-  ].join(', '),
-  authors: [{ name: 'Zenco Systems Ltd', url: SITE_CONFIG.url }],
-  creator: 'Zenco Systems Ltd',
-  publisher: 'Zenco Systems Ltd',
+  keywords: SITE_CONFIG.defaultKeywords.join(', '),
+  authors: [{ name: SITE_CONFIG.name, url: SITE_CONFIG.url }],
+  creator: SITE_CONFIG.name,
+  publisher: SITE_CONFIG.name,
   robots: {
     index: true,
     follow: true,
@@ -53,28 +29,35 @@ export const metadata: Metadata = {
       'max-snippet': -1,
     },
   },
+  alternates: {
+    canonical: SITE_CONFIG.url,
+    languages: {
+      'en-KE': SITE_CONFIG.url,
+      'x-default': SITE_CONFIG.url,
+    },
+  },
   openGraph: {
     type: 'website',
-    locale: 'en_KE',
+    locale: SITE_CONFIG.locale,
     url: SITE_CONFIG.url,
     siteName: SITE_CONFIG.fullName,
-    title: `${SITE_CONFIG.fullName} | Industrial Chemical Supplier`,
+    title: `${SITE_CONFIG.fullName} | ${SITE_CONFIG.tagline}`,
     description: SITE_CONFIG.description,
     images: [
       {
         url: `${SITE_CONFIG.url}/og-image.png`,
         width: 1200,
         height: 630,
-        alt: 'Zenco Systems Ltd – Chemical Division',
+        alt: SITE_CONFIG.fullName,
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: `${SITE_CONFIG.fullName} | Industrial Chemicals`,
+    title: `${SITE_CONFIG.fullName} | ${SITE_CONFIG.tagline}`,
     description: SITE_CONFIG.description,
     images: [`${SITE_CONFIG.url}/og-image.png`],
-    site: '@zencosystems',
+    site: SITE_CONFIG.twitterHandle,
   },
   verification: {
     google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || '',
@@ -91,7 +74,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className={`${inter.variable} ${alice.variable}`}>
+    <html lang="en" suppressHydrationWarning>
       <head>
         {/* Inline script to prevent theme flashing */}
         <script
@@ -102,6 +85,7 @@ export default function RootLayout({
                   const stored = localStorage.getItem('theme');
                   const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
                   const theme = stored || (prefersDark ? 'dark' : 'light');
+                  document.documentElement.dataset.theme = theme;
                   document.documentElement.style.colorScheme = theme;
                   if (theme === 'dark') {
                     document.documentElement.classList.add('dark');
@@ -120,6 +104,13 @@ export default function RootLayout({
             __html: JSON.stringify(organizationSchema()),
           }}
         />
+        {/* WebSite SearchAction Schema */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(websiteSchema()),
+          }}
+        />
         {/* Local Business Schema */}
         <script
           type="application/ld+json"
@@ -132,13 +123,15 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href={SITE_CONFIG.apiUrl} />
       </head>
-      <body className="font-sans antialiased bg-surface dark:bg-[#070619] text-gray-900 dark:text-gray-100 transition-colors duration-200">
-        <Header />
-        <main id="main-content" className="min-h-screen">
-          {children}
-        </main>
-        <Footer />
-        <ChatbotWidget />
+      <body className="font-sans antialiased bg-surface text-gray-900 transition-colors duration-300 ease-in-out">
+        <ThemeProvider>
+          <Header />
+          <main id="main-content" className="min-h-screen">
+            {children}
+          </main>
+          <Footer />
+          <ChatbotWidget />
+        </ThemeProvider>
       </body>
     </html>
   )

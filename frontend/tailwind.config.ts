@@ -40,18 +40,29 @@ const config: Config = {
         },
         // ── UI Surfaces ───────────────────────────────────────
         surface: {
-          DEFAULT: '#F8F9FC',
-          dark: '#0A0920',
+          DEFAULT: '#FFFFFF',
+          dark: '#0A0F1C',
           card: '#FFFFFF',
-          'card-dark': '#111028',
-          border: '#E5E7EB',
-          'border-dark': '#1E1B4B',
+          'card-dark': '#1A2234',
+          elevated: '#F8FAFC',
+          'elevated-dark': '#202B3F',
+          border: '#E2E8F0',
+          'border-dark': '#2F3B52',
+        },
+        gray: {
+          150: '#EEF2F7',
+          250: '#DCE3EC',
+          450: '#64748B',
+          550: '#475569',
+          650: '#334155',
+          850: '#202B3F',
+          905: '#1A2234',
         },
       },
 
       fontFamily: {
-        sans: ['var(--font-inter)', 'system-ui', 'sans-serif'],
-        display: ['var(--font-alice)', 'var(--font-dm-sans)', 'serif'],
+        sans: ['var(--font-alice)', 'Alice', 'Georgia', 'serif'],
+        display: ['var(--font-alice)', 'Alice', 'Georgia', 'serif'],
         mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
       },
 
@@ -76,9 +87,11 @@ const config: Config = {
 
       boxShadow: {
         'glow-primary': '0 0 30px rgba(12, 9, 77, 0.15)',
-        'glow-accent':  '0 0 30px rgba(242, 108, 12, 0.25)',
-        'card':  '0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.08)',
-        'card-hover': '0 4px 12px rgba(0,0,0,0.1), 0 16px 40px rgba(0,0,0,0.12)',
+        'glow-accent':  '0 0 30px rgba(255, 140, 42, 0.28)',
+        'card':  '0 1px 2px rgba(15,23,42,0.04), 0 10px 30px rgba(15,23,42,0.06)',
+        'card-hover': '0 12px 26px rgba(15,23,42,0.10), 0 24px 60px rgba(15,23,42,0.08)',
+        'card-dark': '0 18px 44px rgba(0,0,0,0.24)',
+        'card-dark-hover': '0 24px 70px rgba(0,0,0,0.38)',
         'xl':    '0 8px 30px rgba(0,0,0,0.12)',
         'inner-glow': 'inset 0 1px 0 rgba(255,255,255,0.1)',
       },

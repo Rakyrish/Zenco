@@ -1,6 +1,7 @@
 'use client'
 
 import { ShieldCheck, Truck, Sparkles, HeartHandshake, Award, Activity } from 'lucide-react'
+import { SITE_CONFIG } from '@/lib/constants'
 
 const features = [
   {
@@ -16,7 +17,7 @@ const features = [
   {
     icon: Truck,
     title: 'Reliable Regional Delivery',
-    desc: 'Equipped with a specialized bulk tanker fleet for safe chemical transport across East Africa.',
+    desc: `Equipped with a specialized bulk tanker fleet for safe chemical transport across ${SITE_CONFIG.serviceArea}.`,
   },
  
   {
@@ -40,7 +41,7 @@ export default function WhyChooseUs() {
             Setting the Benchmark in Chemical Distribution
           </h2>
           <p className="text-lg text-gray-300 leading-relaxed">
-            Zenco Systems partners with industrial developers to achieve maximum efficiency, safe storage, and precise formulations.
+            {SITE_CONFIG.name} partners with industrial developers to achieve maximum efficiency, safe storage, and precise formulations.
           </p>
         </div>
 

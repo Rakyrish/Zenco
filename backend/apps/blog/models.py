@@ -91,7 +91,9 @@ class BlogPost(models.Model):
         if not self.seo_title:
             self.seo_title = f"{self.title} | Zenco Systems Blog"[:70]
         if not self.seo_description:
-            self.seo_description = self.excerpt[:160]
+            self.seo_description = (self.excerpt or self.content or "")[:160]
+        if not self.canonical_url:
+            self.canonical_url = f"https://zencosystems.com/blog/{self.slug}"
         super().save(*args, **kwargs)
 
     @property

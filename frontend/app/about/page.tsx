@@ -1,19 +1,38 @@
-'use client'
-
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import { Award, ShieldCheck, HeartHandshake, Eye, Target, Users, Map, CheckCircle } from 'lucide-react'
-import { CERTIFICATIONS } from '@/lib/constants'
+import { CERTIFICATIONS, SITE_CONFIG } from '@/lib/constants'
+import { generatePageMetadata, breadcrumbSchema } from '@/lib/metadata'
+
+export const metadata: Metadata = generatePageMetadata({
+  title: `About Us | ${SITE_CONFIG.fullName}`,
+  description: `Learn about ${SITE_CONFIG.fullName}, a leading chemical supplier in Kenya and East Africa. Our mission, quality controls, and compliance standards.`,
+  path: '/about',
+  keywords: ['about zenco systems', 'chemical supplier Kenya', 'industrial chemical supply East Africa', 'chemical quality control'],
+})
 
 export default function AboutPage() {
+  const breadcrumbs = [
+    { name: 'Home', href: '/' },
+    { name: 'About', href: '/about' },
+  ]
+
   return (
     <div className="min-h-screen bg-surface py-12">
+      {/* Breadcrumb Schema */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(breadcrumbSchema(breadcrumbs)),
+        }}
+      />
       <div className="container-xl px-4">
         {/* Header Section */}
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <span className="section-tag">About Zenco Systems</span>
-          <h1 className="text-3xl md:text-5xl font-bold text-primary mb-3">Chemical Division East Africa</h1>
+          <span className="section-tag">About {SITE_CONFIG.name}</span>
+          <h1 className="text-3xl md:text-5xl font-bold text-primary mb-3">{SITE_CONFIG.division} {SITE_CONFIG.serviceArea}</h1>
           <p className="text-gray-500 leading-relaxed">
-            Zenco Systems Ltd is a premium industrial partner, distributing high-grade raw chemicals and technical solutions for manufacturing systems since 2010.
+            {SITE_CONFIG.name} is a premium industrial partner, distributing high-grade raw chemicals and technical solutions for manufacturing systems.
           </p>
         </div>
 
@@ -26,7 +45,7 @@ export default function AboutPage() {
             <div>
               <h2 className="text-xl font-bold text-primary mb-2">Our Mission</h2>
               <p className="text-sm text-gray-500 leading-relaxed">
-                To source, secure, and deliver the highest purity chemical materials to industries across East Africa, fostering regional growth through standard-compliance and supply reliability.
+                To source, secure, and deliver the highest purity chemical materials to industries across {SITE_CONFIG.serviceArea}, fostering regional growth through standard-compliance and supply reliability.
               </p>
             </div>
           </div>
@@ -38,7 +57,7 @@ export default function AboutPage() {
             <div>
               <h2 className="text-xl font-bold text-primary mb-2">Our Vision</h2>
               <p className="text-sm text-gray-500 leading-relaxed">
-                To be the reference point for industrial safety, eco-conscious distribution, and technical formulation innovation in the East African chemical supply sector.
+                To be the reference point for industrial safety, eco-conscious distribution, and technical formulation innovation in the {SITE_CONFIG.serviceArea} chemical supply sector.
               </p>
             </div>
           </div>
@@ -49,28 +68,20 @@ export default function AboutPage() {
           <div className="lg:col-span-6 space-y-6">
             <h2 className="text-2xl md:text-3xl font-bold text-primary">Uncompromising Quality Controls</h2>
             <p className="text-sm text-gray-500 leading-relaxed">
-              At Zenco Systems, quality control starts at the source. We establish long-term distribution partnerships only with manufacturers possessing ISO 9001:2015 and GMP certifications.
+              At {SITE_CONFIG.name}, quality control starts at the source. We establish long-term distribution partnerships only with manufacturers.
             </p>
             <p className="text-sm text-gray-500 leading-relaxed">
-              Once chemicals arrive at our Nairobi hub, they undergo standardized chemical analysis (density, pH, active compound percentage, viscosity) within our quality control laboratory before customer dispatch.
+              Once chemicals arrive at our {SITE_CONFIG.address.city} hub, they undergo standardized chemical analysis (density, pH, active compound percentage, viscosity) within our quality control laboratory before customer dispatch.
             </p>
 
             <div className="grid grid-cols-2 gap-4 pt-4">
-              <div className="flex items-center gap-2">
-                <ShieldCheck size={18} className="text-accent" />
-                <span className="text-sm font-semibold text-primary">KEBS Compliant</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Award size={18} className="text-accent" />
-                <span className="text-sm font-semibold text-primary">ISO Certifications</span>
-              </div>
               <div className="flex items-center gap-2">
                 <Users size={18} className="text-accent" />
                 <span className="text-sm font-semibold text-primary">Expert Engineers</span>
               </div>
               <div className="flex items-center gap-2">
                 <Map size={18} className="text-accent" />
-                <span className="text-sm font-semibold text-primary">East Africa Reach</span>
+                <span className="text-sm font-semibold text-primary">{SITE_CONFIG.serviceArea} Reach</span>
               </div>
             </div>
           </div>

@@ -39,6 +39,17 @@ type GeneratedMeta = {
   schema_friendly_content?: Record<string, unknown>
   safety_considerations?: string[]
   category_suggestions?: string[]
+  product_tags?: string[]
+  common_names_synonyms?: string[]
+  focus_keyword?: string
+  chemical_name?: string
+  cas_number?: string
+  formula?: string
+  appearance?: string
+  purity?: string
+  grade?: string
+  industry_use?: string[]
+  technical_data_sheet?: Record<string, string>
 }
 
 type Draft = ProductFormData & {
@@ -54,10 +65,10 @@ const emptyDraft: Draft = {
   packaging: '',
   price_per_unit: null,
   availability: 'in_stock',
-  stock_quantity: 0,
+  stock_quantity: 10,
   reorder_level: 10,
   is_featured: false,
-  status: 'draft',
+  status: 'published',
   specifications: {},
   applications: [],
   regions_available: ['Kenya', 'East Africa'],
@@ -73,6 +84,14 @@ function slugify(value: string) {
 
 function limit(value: string, max: number) {
   return value.length > max ? value.slice(0, max).replace(/\s+\S*$/, '').trim() : value
+}
+
+function cleanGeneratedProductName(value: string) {
+  return value
+    .replace(/\bindustrial\s+grade\b/gi, '')
+    .replace(/\s{2,}/g, ' ')
+    .replace(/\s+([,|])/g, '$1')
+    .trim()
 }
 
 function lines(value?: string[]) {
@@ -102,6 +121,10 @@ function calculateSeoScore(draft: Draft, meta: GeneratedMeta, hasImage: boolean)
     (meta.seo_keywords || []).length >= 5,
     Boolean(draft.image_alt_text),
     hasImage,
+    Boolean(meta.focus_keyword),
+    (meta.product_tags || []).length >= 5,
+    (meta.common_names_synonyms || []).length >= 2,
+    Boolean(meta.chemical_name || meta.cas_number || meta.formula),
   ]
   return Math.round((checks.filter(Boolean).length / checks.length) * 100)
 }
@@ -117,6 +140,10 @@ function seoSuggestions(draft: Draft, meta: GeneratedMeta, hasImage: boolean) {
     (meta.faq_section || []).length < 3 && 'Add at least three FAQ entries for rich snippet coverage.',
     (meta.seo_keywords || []).length < 5 && 'Add primary and secondary SEO keywords.',
     draft.applications.length < 3 && 'Add more applications and use cases.',
+    !meta.focus_keyword && 'Define a focus keyword for SEO targeting.',
+    (meta.product_tags || []).length < 5 && 'Add at least 5 product tags for better indexing.',
+    (meta.common_names_synonyms || []).length < 2 && 'Add common names or synonyms for broader search coverage.',
+    !meta.chemical_name && !meta.cas_number && 'Add chemical attributes (name, CAS number) if applicable.',
   ].filter(Boolean) as string[]
 }
 
@@ -159,6 +186,16 @@ export default function ProductPublishingWorkspace({ product }: { product?: Admi
       seo_keywords: schema.seo_keywords as string[] | undefined,
       image_alt_text: String(schema.image_alt_text || ''),
       opengraph_description: String(schema.opengraph_description || ''),
+      product_tags: schema.product_tags as string[] | undefined,
+      common_names_synonyms: schema.common_names_synonyms as string[] | undefined,
+      focus_keyword: String(schema.focus_keyword || ''),
+      chemical_name: String(schema.chemical_name || ''),
+      cas_number: String(schema.cas_number || ''),
+      formula: String(schema.formula || ''),
+      appearance: String(schema.appearance || ''),
+      purity: String(schema.purity || ''),
+      grade: String(schema.grade || ''),
+      industry_use: schema.industry_use as string[] | undefined,
     })
   }, [product])
 
@@ -198,34 +235,76 @@ export default function ProductPublishingWorkspace({ product }: { product?: Admi
   }
 
   const applyGenerated = (generated: any) => {
-    const productName = generated.product_name || generated.name || draft.name
+    // Handle both old and new API response formats
+    const productName = cleanGeneratedProductName(generated.product_title || generated.product_name || generated.name || draft.name)
+    const shortDesc = generated.short_product_description || generated.short_description || generated.product_summary || draft.short_description
+    const longDesc = generated.product_description || generated.long_description || generated.full_product_description || draft.description
+    const metaDesc = generated.meta_description || generated.seo_meta_description || draft.seo_description
+    const slug = generated.seo_slug || generated.url_slug || generated.slug || generated.slug_suggestions?.[0] || productName
+    
+    // Extract product attributes if available
+    const attrs = generated.product_attributes || {}
+    const applications = generated.product_attributes?.applications || generated.applications || draft.applications
+    const industryUse = generated.product_attributes?.industry_use || generated.industries_served || []
+    const packagingValue = generated.product_attributes?.packaging || generated.packaging || draft.packaging || 'Confirm packaging'
+    const packaging = Array.isArray(packagingValue) ? packagingValue.join(', ') : (packagingValue || '')
+    const synonyms = Array.isArray(generated.common_names_synonyms) ? generated.common_names_synonyms.map(String).filter(Boolean) : []
+    
     const nextMeta: GeneratedMeta = {
       benefits: generated.benefits || [],
       features: generated.features || [],
       faq_section: generated.faq_section || [],
-      industries_served: generated.industries_served || [],
+      industries_served: industryUse,
       internal_linking_suggestions: generated.internal_linking_suggestions || [],
-      seo_keywords: generated.seo_keywords || [],
-      image_alt_text: generated.image_alt_text || '',
+      seo_keywords: Array.isArray(generated.seo_keywords) ? generated.seo_keywords : (generated.seo_keywords ? [generated.seo_keywords] : generated.focus_keyword ? [generated.focus_keyword] : []),
+      image_alt_text: cleanGeneratedProductName(generated.image_alt_text || ''),
       opengraph_description: generated.opengraph_description || '',
       schema_friendly_content: generated.schema_friendly_content || {},
       safety_considerations: generated.safety_considerations || [],
       category_suggestions: generated.category_suggestions || [],
+      product_tags: generated.product_tags || [],
+      common_names_synonyms: synonyms,
+      focus_keyword: generated.focus_keyword || '',
+      chemical_name: attrs.chemical_name || '',
+      cas_number: attrs.cas_number || '',
+      formula: attrs.formula || '',
+      appearance: attrs.appearance || '',
+      purity: attrs.purity || '',
+      grade: attrs.grade || '',
+      industry_use: industryUse,
+      technical_data_sheet: generated.technical_data_sheet || generated.tds || attrs.technical_data_sheet || {},
     }
+    
     setMeta(nextMeta)
     setDraft(prev => ({
       ...prev,
       name: limit(productName, 255),
-      slug: slugify(generated.url_slug || generated.slug || generated.slug_suggestions?.[0] || productName),
-      short_description: limit(generated.short_description || generated.product_summary || prev.short_description, 300),
-      description: generated.long_description || generated.full_product_description || prev.description,
-      seo_title: limit(generated.seo_title || productName, 70),
-      seo_description: limit(generated.seo_meta_description || generated.meta_description || prev.seo_description, 160),
-      specifications: generated.technical_specifications || prev.specifications,
-      applications: generated.applications || prev.applications,
-      packaging: generated.packaging || prev.packaging || 'Confirm packaging',
-      image_alt_text: generated.image_alt_text || prev.image_alt_text,
-      schema_data: { ...prev.schema_data, ...nextMeta, ai_generated_at: new Date().toISOString() },
+      slug: slugify(cleanGeneratedProductName(slug)),
+      short_description: limit(shortDesc, 300),
+      description: longDesc,
+      seo_title: limit(cleanGeneratedProductName(generated.seo_title || productName), 70),
+      seo_description: limit(metaDesc, 160),
+      specifications: {
+        ...(synonyms.length ? { 'Synonyms': synonyms.join(', ') } : {}),
+        ...(attrs.chemical_name ? { 'Chemical Name': attrs.chemical_name } : {}),
+        ...(attrs.cas_number ? { 'CAS Number': attrs.cas_number } : {}),
+        ...(attrs.formula ? { 'Formula': attrs.formula } : {}),
+        ...(attrs.appearance ? { 'Appearance': attrs.appearance } : {}),
+        ...(attrs.purity ? { 'Purity': attrs.purity } : {}),
+        ...(attrs.grade ? { 'Grade': attrs.grade } : {}),
+        ...prev.specifications,
+      },
+      applications: Array.isArray(applications) ? applications : prev.applications,
+      packaging,
+      image_alt_text: cleanGeneratedProductName(generated.image_alt_text || prev.image_alt_text),
+      schema_data: {
+        ...prev.schema_data,
+        ...nextMeta,
+        focus_keyword: generated.focus_keyword || '',
+        product_tags: generated.product_tags || [],
+        common_names_synonyms: synonyms,
+        ai_generated_at: new Date().toISOString(),
+      },
     }))
   }
 
@@ -239,7 +318,21 @@ export default function ProductPublishingWorkspace({ product }: { product?: Admi
     try {
       const result = await generateProductContent({ image: imageFile || undefined, image_url: imageFile ? undefined : imageUrl })
       applyGenerated(JSON.parse(result.content))
-      setMessage('AI product profile generated. Review, refine, then publish.')
+      
+      // Build success message with generated fields summary
+      const generated = JSON.parse(result.content)
+      const fields = [
+        generated.product_title && '✓ Product Title',
+        generated.product_description && '✓ Description',
+        (generated.features && generated.features.length > 0) && `✓ Features (${generated.features.length})`,
+        (generated.benefits && generated.benefits.length > 0) && `✓ Benefits (${generated.benefits.length})`,
+        (generated.faq_section && generated.faq_section.length > 0) && `✓ FAQ (${generated.faq_section.length})`,
+        (generated.seo_keywords && generated.seo_keywords.length > 0) && `✓ SEO Keywords (${generated.seo_keywords.length})`,
+        (generated.internal_linking_suggestions && generated.internal_linking_suggestions.length > 0) && `✓ Internal Links (${generated.internal_linking_suggestions.length})`,
+        generated.product_attributes && '✓ Technical Attributes',
+      ].filter(Boolean).join(' • ')
+      
+      setMessage(`AI generated complete product profile. ${fields}. Review, refine, then publish.`)
     } catch (err) {
       setMessage(err instanceof Error ? err.message : 'Generation failed.')
     } finally {
@@ -399,6 +492,39 @@ export default function ProductPublishingWorkspace({ product }: { product?: Admi
 
           <section className="grid gap-4 rounded-lg border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-950 md:grid-cols-2">
             <div>
+              <label className={label}>Focus Keyword (SEO)</label>
+              <input value={meta.focus_keyword || ''} onChange={e => setMeta(prev => ({ ...prev, focus_keyword: e.target.value }))} placeholder="Primary SEO keyword" className={input} />
+            </div>
+            <div>
+              <label className={label}>Chemical Name</label>
+              <input value={meta.chemical_name || ''} onChange={e => setMeta(prev => ({ ...prev, chemical_name: e.target.value }))} className={input} />
+            </div>
+            <div>
+              <label className={label}>CAS Number</label>
+              <input value={meta.cas_number || ''} onChange={e => setMeta(prev => ({ ...prev, cas_number: e.target.value }))} placeholder="e.g., 7732-18-5" className={input} />
+            </div>
+            <div>
+              <label className={label}>Chemical Formula</label>
+              <input value={meta.formula || ''} onChange={e => setMeta(prev => ({ ...prev, formula: e.target.value }))} placeholder="e.g., H₂O₂" className={input} />
+            </div>
+            <div>
+              <label className={label}>Appearance</label>
+              <input value={meta.appearance || ''} onChange={e => setMeta(prev => ({ ...prev, appearance: e.target.value }))} placeholder="e.g., Colorless liquid" className={input} />
+            </div>
+            <div>
+              <label className={label}>Purity</label>
+              <input value={meta.purity || ''} onChange={e => setMeta(prev => ({ ...prev, purity: e.target.value }))} placeholder="e.g., 99.5%" className={input} />
+            </div>
+            <div>
+              <label className={label}>Grade</label>
+              <input value={meta.grade || ''} onChange={e => setMeta(prev => ({ ...prev, grade: e.target.value }))} placeholder="e.g., Industrial Grade" className={input} />
+            </div>
+            <TextList title="Product Tags" value={(meta.product_tags || []).join('\n')} onChange={value => setMeta(prev => ({ ...prev, product_tags: splitLines(value) }))} inputClass={input} />
+            <TextList title="Synonyms & Common Names" value={(meta.common_names_synonyms || []).join('\n')} onChange={value => setMeta(prev => ({ ...prev, common_names_synonyms: splitLines(value) }))} inputClass={input} />
+          </section>
+
+          <section className="grid gap-4 rounded-lg border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-950 md:grid-cols-2">
+            <div>
               <label className={label}>SEO Title</label>
               <input value={draft.seo_title} onChange={e => setField('seo_title', e.target.value)} className={input} maxLength={70} />
             </div>
@@ -489,12 +615,55 @@ export default function ProductPublishingWorkspace({ product }: { product?: Admi
           </section>
 
           <section className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-950">
-            <h2 className="mb-3 text-sm font-extrabold text-gray-950 dark:text-white">Internal Links</h2>
-            <div className="space-y-2">
-              {(meta.internal_linking_suggestions || meta.category_suggestions || []).map(item => (
-                <span key={item} className="block rounded-md bg-gray-100 px-2.5 py-1.5 text-xs font-semibold text-gray-700 dark:bg-gray-800 dark:text-gray-200">{item}</span>
-              ))}
-              {!(meta.internal_linking_suggestions || meta.category_suggestions || []).length && <p className="text-xs text-gray-500 dark:text-gray-400">AI suggestions will appear after generation.</p>}
+            <h2 className="mb-3 text-sm font-extrabold text-gray-950 dark:text-white">Internal Links & SEO</h2>
+            <div className="space-y-4">
+              <div>
+                <label className={label}>Internal Linking Suggestions</label>
+                <div className="space-y-2">
+                  {(meta.internal_linking_suggestions || []).map((item, idx) => {
+                    const isExternal = item.startsWith('http://') || item.startsWith('https://')
+                    return (
+                    <div key={idx} className="flex items-center justify-between rounded-md bg-blue-50 px-2.5 py-1.5 dark:bg-blue-950/30">
+                      {isExternal ? (
+                        <a href={item} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-blue-700 hover:underline dark:text-blue-300">
+                          {item}
+                        </a>
+                      ) : (
+                        <a href={item} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-blue-700 hover:underline dark:text-blue-300">
+                          {item}
+                        </a>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setMeta(prev => ({ ...prev, internal_linking_suggestions: (prev.internal_linking_suggestions || []).filter((_, i) => i !== idx) }))}
+                        className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-200"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                    )
+                  })}
+                  {!(meta.internal_linking_suggestions || []).length && <p className="text-xs text-gray-500 dark:text-gray-400">No internal linking suggestions. Add them after generation.</p>}
+                </div>
+                <textarea
+                  placeholder="Add internal linking suggestions (one per line, e.g., /products/related-product, /industries/manufacturing)"
+                  value={(meta.internal_linking_suggestions || []).join('\n')}
+                  onChange={e => setMeta(prev => ({ ...prev, internal_linking_suggestions: splitLines(e.target.value) }))}
+                  rows={3}
+                  className={`${input} resize-y mt-2`}
+                />
+              </div>
+
+              {meta.category_suggestions && meta.category_suggestions.length > 0 && (
+                <div>
+                  <label className={label}>Category Suggestions</label>
+                  <div className="space-y-2">
+                    {meta.category_suggestions.map((item, idx) => (
+                      <span key={idx} className="block rounded-md bg-amber-50 px-2.5 py-1.5 text-xs font-semibold text-amber-700 dark:bg-amber-950/30 dark:text-amber-300">{item}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </section>
         </aside>

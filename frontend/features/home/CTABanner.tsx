@@ -17,7 +17,7 @@ export default function CTABanner() {
           Ready to Streamline Your Industrial Chemical Supply Chain?
         </h2>
         <p className="text-lg text-gray-300 mb-10 max-w-2xl mx-auto leading-relaxed">
-          Partner with Zenco Systems for reliable volume supply, tailored chemical blending, and expert technical support across East Africa.
+          Partner with {SITE_CONFIG.name} for reliable volume supply, tailored chemical blending, and expert technical support across {SITE_CONFIG.serviceArea}.
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">

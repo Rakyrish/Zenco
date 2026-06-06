@@ -25,6 +25,25 @@ export default function Header() {
   const [categories, setCategories] = useState<Category[]>([])
   const pathname = usePathname()
   const megaRef = useRef<HTMLDivElement>(null)
+  const megaCloseTimer = useRef<number | null>(null)
+
+  const openMegaMenu = (menu: string) => {
+    if (megaCloseTimer.current) {
+      window.clearTimeout(megaCloseTimer.current)
+      megaCloseTimer.current = null
+    }
+    setMegaMenu(menu)
+  }
+
+  const closeMegaMenu = () => {
+    if (megaCloseTimer.current) {
+      window.clearTimeout(megaCloseTimer.current)
+    }
+    megaCloseTimer.current = window.setTimeout(() => {
+      setMegaMenu(null)
+      megaCloseTimer.current = null
+    }, 160)
+  }
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20)
@@ -71,6 +90,14 @@ export default function Header() {
     return () => window.removeEventListener('keydown', handleKey)
   }, [])
 
+  useEffect(() => {
+    return () => {
+      if (megaCloseTimer.current) {
+        window.clearTimeout(megaCloseTimer.current)
+      }
+    }
+  }, [])
+
   const isActive = (href: string) =>
     href === '/' ? pathname === '/' : pathname.startsWith(href)
 
@@ -107,7 +134,7 @@ export default function Header() {
           'sticky top-0 z-50 transition-all duration-300 w-full',
           scrolled
             ? 'navbar-scrolled'
-            : 'bg-primary/95 backdrop-blur-sm border-b border-white/10',
+            : 'bg-primary/95 dark:bg-[rgba(17,24,39,0.8)] backdrop-blur-xl border-b border-white/10 dark:border-[#2f3b52]',
         )}
       >
         <div className="container-xl px-4">
@@ -129,8 +156,8 @@ export default function Header() {
                         'text-white/80 hover:text-white hover:bg-white/10 transition-all duration-150',
                         isActive(link.href) && 'text-accent',
                       )}
-                      onMouseEnter={() => setMegaMenu('products')}
-                      onMouseLeave={() => setMegaMenu(null)}
+                      onMouseEnter={() => openMegaMenu('products')}
+                      onMouseLeave={closeMegaMenu}
                       aria-haspopup="true"
                       aria-expanded={megaMenu === 'products'}
                     >
@@ -157,12 +184,12 @@ export default function Header() {
                       </button>
                       {/* Dropdown */}
                       <div className="absolute top-full left-0 pt-2 hidden group-hover/sub:block">
-                        <div className="bg-white rounded-xl shadow-xl border border-gray-100 py-2 min-w-[200px]">
+                        <div className="bg-white dark:bg-[#1a2234] rounded-xl shadow-xl border border-gray-100 dark:border-[#2f3b52] py-2 min-w-[200px]">
                           {(link as any).children.map((child: any) => (
                             <Link
                               key={child.href}
                               href={child.href}
-                              className="block px-4 py-2.5 text-sm text-gray-700 hover:text-accent hover:bg-accent/5 transition-colors"
+                              className="block px-4 py-2.5 text-sm text-gray-700 dark:text-[#cbd5e1] hover:text-accent hover:bg-accent/5 dark:hover:bg-[#202b3f] transition-colors"
                             >
                               {child.label}
                             </Link>
@@ -188,15 +215,15 @@ export default function Header() {
               {/* Products Mega Menu */}
               {megaMenu === 'products' && (
                 <div
-                  className="absolute top-full left-0 right-0 mt-0 bg-white shadow-2xl border-t-2 border-accent z-50"
-                  onMouseEnter={() => setMegaMenu('products')}
-                  onMouseLeave={() => setMegaMenu(null)}
+                  className="absolute top-full left-0 right-0 mt-0 bg-white dark:bg-[#1a2234] shadow-2xl border-t-2 border-accent dark:border-[#ff8c2a] z-50"
+                  onMouseEnter={() => openMegaMenu('products')}
+                  onMouseLeave={closeMegaMenu}
                 >
                   <div className="container-xl px-4 py-8">
                     <div className="grid grid-cols-4 gap-6">
                       {/* Categories */}
                       <div className="col-span-3">
-                        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">
+                        <p className="text-xs font-bold text-gray-400 dark:text-[#94a3b8] uppercase tracking-widest mb-4">
                           Product Categories
                         </p>
                         <div className="grid grid-cols-3 gap-3">
@@ -207,11 +234,11 @@ export default function Header() {
                               className="flex items-center gap-3 p-3 rounded-xl hover:bg-accent/5 hover:border-accent/20 border border-transparent transition-all group/item"
                             >
                               <div className="w-9 h-9 rounded-lg bg-primary/8 flex items-center justify-center flex-shrink-0 group-hover/item:bg-accent/10 transition-colors">
-                                <span className="text-primary text-base">⚗</span>
+                                <span className="text-primary dark:text-[#ff8c2a] text-base">⚗</span>
                               </div>
-                              <span className="text-sm font-medium text-gray-700 group-hover/item:text-accent transition-colors">
+                              <span className="text-sm font-medium text-gray-700 dark:text-[#cbd5e1] group-hover/item:text-accent transition-colors">
                                 {cat.name}
-                                <span className="ml-1 text-xs text-gray-400">({cat.product_count})</span>
+                                <span className="ml-1 text-xs text-gray-400 dark:text-[#64748b]">({cat.product_count})</span>
                               </span>
                             </Link>
                           ))}
@@ -222,7 +249,7 @@ export default function Header() {
                       <div className="bg-gradient-hero rounded-2xl p-6 text-white pattern-dots">
                         <p className="font-bold text-base mb-2">Need a Quote?</p>
                         <p className="text-white/70 text-sm mb-4">
-                          Get competitive pricing for bulk chemical orders across East Africa.
+                          Get competitive pricing for bulk chemical orders across {SITE_CONFIG.serviceArea}.
                         </p>
                         <Link
                           href="/contact?type=quote"
