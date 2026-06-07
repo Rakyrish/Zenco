@@ -1,5 +1,5 @@
 # Build Stage
-FROM node:18-alpine AS builder
+FROM node:20-alpine AS builder
 WORKDIR /app
 
 ARG INTERNAL_API_URL=http://backend:8000/api
@@ -69,12 +69,16 @@ ENV NEXT_PUBLIC_TWITTER_HANDLE=$NEXT_PUBLIC_TWITTER_HANDLE
 ENV NEXT_PUBLIC_DEFAULT_KEYWORDS=$NEXT_PUBLIC_DEFAULT_KEYWORDS
 
 COPY package*.json ./
-RUN npm ci
+RUN npm config set fetch-retries 5 \
+    && npm config set fetch-retry-mintimeout 20000 \
+    && npm config set fetch-retry-maxtimeout 120000 \
+    && npm config set fetch-timeout 300000 \
+    && npm ci
 COPY . .
 RUN npm run build
 
 # Production Stage
-FROM node:18-alpine AS runner
+FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 

@@ -65,9 +65,6 @@ const nextConfig: NextConfig = {
   },
 
   images: {
-    // Let Cloudinary handle its own optimization — bypass Next.js image proxy for Cloudinary URLs
-    loader: 'custom',
-    loaderFile: './lib/image-loader.ts',
     remotePatterns: [
       {
         protocol: 'https',
@@ -102,7 +99,7 @@ const nextConfig: NextConfig = {
               "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.googletagmanager.com https://static.cloudflareinsights.com",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
-              "img-src 'self' data: blob: https: https://res.cloudinary.com",
+              `img-src 'self' data: blob: https: https://res.cloudinary.com ${apiOrigin}`,
               `connect-src 'self' ${apiOrigin} https://cloudflareinsights.com`,
               "frame-src https://www.google.com https://maps.google.com",
             ].join('; '),

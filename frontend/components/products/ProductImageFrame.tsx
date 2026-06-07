@@ -25,6 +25,7 @@ export default function ProductImageFrame({
     size === 'hero' ? 1300 : size === 'thumb' ? 240 : 720,
     size === 'hero' ? 980 : size === 'thumb' ? 180 : 520,
   )
+  const isCloudinaryImage = image.includes('res.cloudinary.com')
 
   return (
     <div className={`relative overflow-hidden bg-zinc-100 ${className}`}>
@@ -36,6 +37,7 @@ export default function ProductImageFrame({
           priority={priority}
           loading={priority ? 'eager' : 'lazy'}
           sizes={size === 'thumb' ? '96px' : size === 'hero' ? '(min-width: 1024px) 50vw, 100vw' : '(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw'}
+          unoptimized={isCloudinaryImage}
           className={`h-full w-full object-cover ${imageClassName}`}
         />
       ) : (
