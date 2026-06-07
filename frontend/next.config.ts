@@ -6,11 +6,9 @@ const rootEnvPath = path.resolve(process.cwd(), '..', '.env')
 
 function readRootEnvValue(key: string) {
   if (!existsSync(rootEnvPath)) return ''
-
   const line = readFileSync(rootEnvPath, 'utf8')
     .split(/\r?\n/)
     .find(entry => entry.startsWith(`${key}=`))
-
   return line?.slice(key.length + 1).trim().replace(/^["']|["']$/g, '') || ''
 }
 
@@ -22,12 +20,9 @@ const apiUrl = publicEnv('NEXT_PUBLIC_API_URL').replace(/\/$/, '')
 const mediaUrl = new URL(apiUrl.replace(/\/api\/?$/, ''))
 const apiOrigin = mediaUrl.origin
 const allowedDevOrigins = (readRootEnvValue('NEXT_ALLOWED_DEV_ORIGINS') || process.env.NEXT_ALLOWED_DEV_ORIGINS || '')
-  .split(',')
-  .map(origin => origin.trim())
-  .filter(Boolean)
+  .split(',').map(o => o.trim()).filter(Boolean)
 
 const nextConfig: NextConfig = {
-  // Strict mode for better DX
   reactStrictMode: true,
   allowedDevOrigins,
   poweredByHeader: false,
@@ -69,18 +64,20 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_DEFAULT_KEYWORDS: publicEnv('NEXT_PUBLIC_DEFAULT_KEYWORDS', 'DEFAULT_KEYWORDS'),
   },
 
-  // Image optimization
   images: {
+    // Let Cloudinary handle its own optimization — bypass Next.js image proxy for Cloudinary URLs
+    loader: 'custom',
+    loaderFile: './lib/image-loader.ts',
     remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+        pathname: '/**',
+      },
       {
         protocol: mediaUrl.protocol.replace(':', '') as 'http' | 'https',
         hostname: mediaUrl.hostname,
         port: mediaUrl.port,
-        pathname: '/media/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'res.cloudinary.com',
         pathname: '/**',
       },
     ],
@@ -89,7 +86,6 @@ const nextConfig: NextConfig = {
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
   },
 
-  // Security & performance headers
   async headers() {
     return [
       {
@@ -103,11 +99,11 @@ const nextConfig: NextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.googletagmanager.com",
+              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.googletagmanager.com https://static.cloudflareinsights.com",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
-              "img-src 'self' data: blob: https:",
-              `connect-src 'self' ${apiOrigin}`,
+              "img-src 'self' data: blob: https: https://res.cloudinary.com",
+              `connect-src 'self' ${apiOrigin} https://cloudflareinsights.com`,
               "frame-src https://www.google.com https://maps.google.com",
             ].join('; '),
           },
@@ -115,21 +111,15 @@ const nextConfig: NextConfig = {
       },
       {
         source: '/_next/static/(.*)',
-        headers: [
-          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
-        ],
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
       },
       {
         source: '/favicon.ico',
-        headers: [
-          { key: 'Cache-Control', value: 'public, max-age=86400, must-revalidate' },
-        ],
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=86400, must-revalidate' }],
       },
       {
         source: '/admin/:path*',
-        headers: [
-          { key: 'X-Robots-Tag', value: 'noindex, nofollow' },
-        ],
+        headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }],
       },
       {
         source: '/api/(.*)',
@@ -141,19 +131,12 @@ const nextConfig: NextConfig = {
     ]
   },
 
-  // Rewrites to proxy API calls in development
   async rewrites() {
     return process.env.NODE_ENV === 'development'
-      ? [
-          {
-            source: '/api/:path*',
-            destination: `${apiUrl.replace(/\/$/, '')}/:path*`,
-          },
-        ]
+      ? [{ source: '/api/:path*', destination: `${apiUrl.replace(/\/$/, '')}/:path*` }]
       : []
   },
 
-  // Bundle analysis (set ANALYZE=true to enable)
   ...(process.env.ANALYZE === 'true' && {
     webpack(config: any) {
       const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer')

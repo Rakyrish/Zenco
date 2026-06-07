@@ -13,7 +13,21 @@ import type {
   InquiryFormData,
 } from '@/types'
 
-const BASE_URL = SITE_CONFIG.apiUrl
+function getBaseUrl(): string {
+  if (typeof window === 'undefined') {
+    return process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL || SITE_CONFIG.apiUrl
+  }
+  return SITE_CONFIG.apiUrl
+}
+
+function getExtraHeaders(): Record<string, string> {
+  // When running server-side via internal Docker URL, spoof the Host header
+  // so Django's ALLOWED_HOSTS check passes
+  if (typeof window === 'undefined' && process.env.INTERNAL_API_URL) {
+    return { Host: 'zencochemicals.com' }
+  }
+  return {}
+}
 
 async function fetchAPI<T>(
   endpoint: string,
@@ -21,6 +35,7 @@ async function fetchAPI<T>(
   cache: RequestCache = 'default',
   revalidate?: number,
 ): Promise<T> {
+  const BASE_URL = getBaseUrl()
   const url = `${BASE_URL}${endpoint}`
 
   const res = await fetch(url, {
@@ -28,6 +43,7 @@ async function fetchAPI<T>(
     headers: {
       'Content-Type': 'application/json',
       Accept: 'application/json',
+      ...getExtraHeaders(),
       ...options.headers,
     },
     cache,
@@ -45,12 +61,7 @@ async function fetchAPI<T>(
 // ─── Products ─────────────────────────────────────────────────────────────
 
 export async function getCategories(): Promise<Category[]> {
-  const data = await fetchAPI<PaginatedResponse<Category>>(
-    '/products/categories/',
-    {},
-    'force-cache',
-    3600,
-  )
+  const data = await fetchAPI<PaginatedResponse<Category>>('/products/categories/', {}, 'force-cache', 3600)
   return data.results
 }
 
@@ -95,12 +106,7 @@ export async function getProductBySlug(slug: string): Promise<ProductDetail> {
 // ─── Services ─────────────────────────────────────────────────────────────
 
 export async function getServices(): Promise<Service[]> {
-  const data = await fetchAPI<PaginatedResponse<Service>>(
-    '/services/',
-    {},
-    'force-cache',
-    3600,
-  )
+  const data = await fetchAPI<PaginatedResponse<Service>>('/services/', {}, 'force-cache', 3600)
   return data.results
 }
 
@@ -111,12 +117,7 @@ export async function getServiceBySlug(slug: string): Promise<Service> {
 // ─── Industries ───────────────────────────────────────────────────────────
 
 export async function getIndustries(): Promise<Industry[]> {
-  const data = await fetchAPI<PaginatedResponse<Industry>>(
-    '/industries/',
-    {},
-    'force-cache',
-    3600,
-  )
+  const data = await fetchAPI<PaginatedResponse<Industry>>('/industries/', {}, 'force-cache', 3600)
   return data.results
 }
 
@@ -136,12 +137,7 @@ export async function getBlogPosts(params?: {
   if (params?.page) query.set('page', String(params.page))
   if (params?.featured) query.set('is_featured', 'true')
 
-  return fetchAPI<PaginatedResponse<BlogPost>>(
-    `/blog/?${query}`,
-    {},
-    'force-cache',
-    60,
-  )
+  return fetchAPI<PaginatedResponse<BlogPost>>(`/blog/?${query}`, {}, 'force-cache', 60)
 }
 
 export async function getBlogPostBySlug(slug: string): Promise<BlogPostDetail> {
@@ -155,34 +151,21 @@ export async function getFeaturedBlogPosts(): Promise<BlogPost[]> {
 // ─── Testimonials ─────────────────────────────────────────────────────────
 
 export async function getTestimonials(): Promise<Testimonial[]> {
-  const data = await fetchAPI<PaginatedResponse<Testimonial>>(
-    '/testimonials/',
-    {},
-    'force-cache',
-    7200,
-  )
+  const data = await fetchAPI<PaginatedResponse<Testimonial>>('/testimonials/', {}, 'force-cache', 7200)
   return data.results
 }
 
 // ─── Partners ─────────────────────────────────────────────────────────────
 
 export async function getPartners(): Promise<Partner[]> {
-  const data = await fetchAPI<PaginatedResponse<Partner>>(
-    '/partners/',
-    {},
-    'force-cache',
-    7200,
-  )
+  const data = await fetchAPI<PaginatedResponse<Partner>>('/partners/', {}, 'force-cache', 7200)
   return data.results
 }
 
 // ─── Inquiries ────────────────────────────────────────────────────────────
 
 export async function submitInquiry(data: InquiryFormData): Promise<{ message: string }> {
-  return fetchAPI<{ message: string }>('/inquiries/', {
-    method: 'POST',
-    body: JSON.stringify(data),
-  }, 'no-store')
+  return fetchAPI<{ message: string }>('/inquiries/', { method: 'POST', body: JSON.stringify(data) }, 'no-store')
 }
 
 export async function trackWhatsAppClick(data: {
@@ -191,10 +174,7 @@ export async function trackWhatsAppClick(data: {
   message?: string
   product_slug?: string
 }): Promise<{ message: string }> {
-  return fetchAPI<{ message: string }>('/analytics/whatsapp-click/', {
-    method: 'POST',
-    body: JSON.stringify(data),
-  }, 'no-store')
+  return fetchAPI<{ message: string }>('/analytics/whatsapp-click/', { method: 'POST', body: JSON.stringify(data) }, 'no-store')
 }
 
 // ─── Sitemap Pagination Helpers ───────────────────────────────────────────
@@ -232,4 +212,3 @@ export async function getAllBlogPosts(): Promise<BlogPost[]> {
   }
   return all
 }
-
