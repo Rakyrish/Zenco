@@ -312,6 +312,123 @@ export interface ConversionStats {
   avg_response_time_hours: number
 }
 
+// ── Monitoring ───────────────────────────────────────────────────────────
+
+export interface MonitoringNamedValue {
+  label: string
+  value: number
+}
+
+export interface MonitoringRecommendation {
+  severity: 'info' | 'warning' | 'critical'
+  message: string
+  count?: number
+}
+
+export interface MonitoringOverview {
+  generated_at: string
+  data_sources: string[]
+  website_overview: {
+    total_website_visitors: number | null
+    active_users_right_now: number | null
+    visitors_today: number | null
+    visitors_this_week: number | null
+    visitors_this_month: number | null
+    returning_visitors: number | null
+    new_visitors: number | null
+    average_session_duration: string | null
+    bounce_rate: number | null
+    top_landing_pages: MonitoringNamedValue[]
+    most_viewed_pages: Array<{ label: string; path: string; value: number }>
+    exit_pages: MonitoringNamedValue[]
+    user_flow_analysis: string | null
+  }
+  seo: {
+    score: number | null
+    page_score: number | null
+    product_score: number | null
+    blog_score: number | null
+    category_score: number | null
+    issues: Record<string, number>
+    recommendations: MonitoringRecommendation[]
+    robots_txt_health: string | null
+    sitemap_coverage: string | null
+    structured_data: string | null
+    broken_links: string | null
+    redirect_chains: string | null
+  }
+  performance: {
+    latest_snapshot_at: string | null
+    performance_score: number | null
+    accessibility_score: number | null
+    best_practices_score: number | null
+    seo_score: number | null
+    largest_contentful_paint: number | null
+    first_contentful_paint: number | null
+    interaction_to_next_paint: number | null
+    cumulative_layout_shift: number | null
+    time_to_first_byte: number | null
+    mobile_metrics: Record<string, unknown> | null
+    desktop_metrics: Record<string, unknown> | null
+    historical_trends: Record<string, unknown>[]
+  }
+  errors: { message: string; [key: string]: unknown }
+  api_health: { endpoints: unknown[]; uptime_percentage: number | null; message: string }
+  inventory: {
+    total_inventory_value: number | null
+    available_stock: number | null
+    out_of_stock_products: number
+    low_stock_products: number
+    negative_inventory: number
+    fast_moving_products: MonitoringNamedValue[]
+    slow_moving_products: MonitoringNamedValue[]
+    supplier_performance: Array<{ supplier: string; product_count: number }>
+    inventory_turnover_rate: number | null
+    google_sheets_sync: {
+      status: string | null
+      resource: string | null
+      sheet_name: string | null
+      last_pull_at: string | null
+      last_push_at: string | null
+      message: string
+    }
+  }
+  crm: {
+    leads_generated: number
+    quote_requests: number
+    contact_form_submissions: number
+    product_inquiries: number
+    whatsapp_clicks: number
+    phone_clicks: number | null
+    email_clicks: number | null
+    chatbot_conversations: number
+    lead_sources: MonitoringNamedValue[]
+    top_regions: MonitoringNamedValue[]
+    most_requested_chemicals: MonitoringNamedValue[]
+  }
+  ai: { message: string; [key: string]: unknown }
+  chatbot: {
+    conversations: number
+    conversations_today: number
+    unresolved_conversations: number
+    most_asked_questions: MonitoringNamedValue[]
+    failed_responses: number | null
+    escalated_conversations: number
+    product_requests: MonitoringNamedValue[]
+    customer_satisfaction_ratings: number | null
+  }
+  security: { message: string; [key: string]: unknown }
+  business_intelligence: {
+    revenue_trends: unknown
+    quote_trends: Record<string, number>
+    lead_trends: Record<string, number>
+    inventory_trends: unknown
+    product_trends: unknown
+    search_trends: unknown
+    customer_trends: unknown
+  }
+}
+
 // ── SEO ───────────────────────────────────────────────────────────────────
 
 export interface SeoPageMeta {

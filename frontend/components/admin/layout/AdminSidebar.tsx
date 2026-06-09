@@ -7,7 +7,7 @@ import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, Package, FileText, MessageSquare, ShoppingCart,
   Bot, BarChart3, Warehouse, Search, Settings, Users, ChevronLeft,
-  ChevronRight, X, Zap,
+  ChevronRight, X, Zap, Activity,
 } from 'lucide-react'
 
 interface NavGroup {
@@ -48,6 +48,7 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: 'Analytics & SEO',
     items: [
+      { label: 'Monitoring', href: '/admin/monitoring', icon: <Activity size={18} /> },
       { label: 'Analytics', href: '/admin/analytics', icon: <BarChart3 size={18} /> },
       { label: 'SEO Manager', href: '/admin/seo', icon: <Search size={18} /> },
       { label: 'Performance', href: '/admin/performance', icon: <Zap size={18} /> },

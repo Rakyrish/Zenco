@@ -1,10 +1,8 @@
 import type { Metadata } from 'next'
 import { SITE_CONFIG } from '@/lib/constants'
 import { organizationSchema, localBusinessSchema, websiteSchema } from '@/lib/metadata'
-import Header from '@/components/layout/Header'
-import Footer from '@/components/layout/Footer'
-import ChatbotWidget from '@/components/shared/ChatbotWidget'
 import ThemeProvider from '@/components/shared/ThemeProvider'
+import PublicChrome from '@/components/layout/PublicChrome'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -125,12 +123,9 @@ export default function RootLayout({
       </head>
       <body className="font-sans antialiased bg-surface text-gray-900 transition-colors duration-300 ease-in-out">
         <ThemeProvider>
-          <Header />
-          <main id="main-content" className="min-h-screen">
+          <PublicChrome>
             {children}
-          </main>
-          <Footer />
-          <ChatbotWidget />
+          </PublicChrome>
         </ThemeProvider>
       </body>
     </html>

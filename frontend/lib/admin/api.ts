@@ -6,7 +6,7 @@ import type {
   BlogFormData, AdminInquiry, AdminQuote, ChatbotConversation,
   InventoryItem, Supplier, AnalyticsOverview, TopContent, ConversionStats,
   SeoPageMeta, SiteSetting, DashboardStats, AdminUser, AuthTokens,
-  AdminProductCategory, AdminBlogCategory,
+  AdminProductCategory, AdminBlogCategory, MonitoringOverview,
 } from './types'
 
 const BASE_URL = SITE_CONFIG.apiUrl
@@ -286,6 +286,10 @@ export async function getTopBlogPosts(): Promise<TopContent[]> {
 
 export async function getConversionStats(): Promise<ConversionStats> {
   return adminFetch<ConversionStats>('/analytics/conversions/')
+}
+
+export async function getMonitoringOverview(): Promise<MonitoringOverview> {
+  return adminFetch<MonitoringOverview>('/admin/monitoring/overview/')
 }
 
 // ─── SEO ──────────────────────────────────────────────────────────────────

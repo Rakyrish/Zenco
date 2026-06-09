@@ -10,7 +10,7 @@ from urllib.error import URLError
 
 from django.conf import settings
 from django.core.files.base import ContentFile
-from django.db.models import Q
+from django.db.models import Count, Q, Sum
 from django.utils import timezone
 from rest_framework import generics, filters, status
 from rest_framework.decorators import api_view, permission_classes
@@ -58,6 +58,233 @@ def dashboard_stats(request):
         'low_stock_alerts': Product.objects.filter(stock_quantity__lte=models_f('reorder_level')).count(),
         'new_inquiries_today': Inquiry.objects.filter(created_at__date=today).count(),
         'resolved_today': Inquiry.objects.filter(updated_at__date=today, status__in=['replied', 'closed', 'resolved']).count(),
+    })
+
+
+def _iso_or_none(value):
+    return value.isoformat() if value else None
+
+
+@api_view(['GET'])
+@permission_classes([IsAdminUser])
+def monitoring_overview(request):
+    today = timezone.now().date()
+    week_start = today - timedelta(days=6)
+    month_start = today - timedelta(days=29)
+
+    inquiries = Inquiry.objects.all()
+    products = Product.objects.select_related('category').all()
+    published_products = products.filter(is_active=True, status='published')
+    blog_posts = BlogPost.objects.all()
+    chats = ChatConversation.objects.all()
+    whatsapp_clicks = WhatsAppClick.objects.all()
+
+    products_with_cost = products.exclude(cost_per_unit__isnull=True)
+    inventory_value = sum(
+        float(product.cost_per_unit) * product.stock_quantity
+        for product in products_with_cost
+    ) if products_with_cost.exists() else None
+
+    inquiry_type_rows = inquiries.values('inquiry_type').annotate(count=Count('id')).order_by('-count')
+    country_rows = inquiries.exclude(country='').values('country').annotate(count=Count('id')).order_by('-count')[:8]
+    product_interest_rows = inquiries.exclude(product_interest='').values('product_interest').annotate(count=Count('id')).order_by('-count')[:8]
+    chatbot_question_rows = ChatMessage.objects.filter(role='user').values('content').annotate(count=Count('id')).order_by('-count')[:8]
+    product_request_rows = chats.exclude(product_interest='').values('product_interest').annotate(count=Count('id')).order_by('-count')[:8]
+
+    seo_pages_qs = SeoPageMeta.objects.all()
+    product_seo_total = published_products.count()
+    blog_seo_total = blog_posts.count()
+    category_seo_total = Category.objects.filter(is_active=True).count()
+    seo_issues = {
+        'pages_missing_title': seo_pages_qs.filter(seo_title='').count(),
+        'pages_missing_description': seo_pages_qs.filter(seo_description='').count(),
+        'pages_missing_canonical': seo_pages_qs.filter(canonical_url='').count(),
+        'products_missing_title': published_products.filter(seo_title='').count(),
+        'products_missing_description': published_products.filter(seo_description='').count(),
+        'products_missing_image_alt_source': published_products.filter(image='').count(),
+        'blogs_missing_title': blog_posts.filter(seo_title='').count(),
+        'blogs_missing_description': blog_posts.filter(seo_description='').count(),
+        'categories_missing_title': Category.objects.filter(is_active=True, seo_title='').count(),
+        'categories_missing_description': Category.objects.filter(is_active=True, seo_description='').count(),
+    }
+    seo_checks = (
+        seo_pages_qs.count() * 3
+        + product_seo_total * 3
+        + blog_seo_total * 2
+        + category_seo_total * 2
+    )
+    seo_issue_count = sum(seo_issues.values())
+    seo_score = round(((seo_checks - seo_issue_count) / seo_checks) * 100) if seo_checks else None
+
+    latest_snapshot = PerformanceSnapshot.objects.order_by('-created_at').first()
+    latest_sync = GoogleSheetSyncState.objects.order_by('-updated_at').first()
+
+    return Response({
+        'generated_at': timezone.now().isoformat(),
+        'data_sources': [
+            'Product, category, blog, inquiry, chatbot, WhatsApp click, SEO metadata, performance snapshot, and Google Sheet sync database tables',
+        ],
+        'website_overview': {
+            'total_website_visitors': None,
+            'active_users_right_now': None,
+            'visitors_today': None,
+            'visitors_this_week': None,
+            'visitors_this_month': None,
+            'returning_visitors': None,
+            'new_visitors': None,
+            'average_session_duration': None,
+            'bounce_rate': None,
+            'top_landing_pages': [],
+            'most_viewed_pages': [
+                {'label': post.title, 'path': f'/blog/{post.slug}', 'value': post.views_count}
+                for post in blog_posts.order_by('-views_count')[:8]
+                if post.views_count
+            ],
+            'exit_pages': [],
+            'user_flow_analysis': None,
+        },
+        'seo': {
+            'score': seo_score,
+            'page_score': seo_score,
+            'product_score': round(((product_seo_total * 3 - seo_issues['products_missing_title'] - seo_issues['products_missing_description'] - seo_issues['products_missing_image_alt_source']) / (product_seo_total * 3)) * 100) if product_seo_total else None,
+            'blog_score': round(((blog_seo_total * 2 - seo_issues['blogs_missing_title'] - seo_issues['blogs_missing_description']) / (blog_seo_total * 2)) * 100) if blog_seo_total else None,
+            'category_score': round(((category_seo_total * 2 - seo_issues['categories_missing_title'] - seo_issues['categories_missing_description']) / (category_seo_total * 2)) * 100) if category_seo_total else None,
+            'issues': seo_issues,
+            'recommendations': [
+                {'severity': 'warning', 'message': label.replace('_', ' ').title(), 'count': count}
+                for label, count in seo_issues.items()
+                if count > 0
+            ],
+            'robots_txt_health': None,
+            'sitemap_coverage': None,
+            'structured_data': None,
+            'broken_links': None,
+            'redirect_chains': None,
+        },
+        'performance': {
+            'latest_snapshot_at': _iso_or_none(latest_snapshot.created_at) if latest_snapshot else None,
+            'performance_score': latest_snapshot.performance_score if latest_snapshot else None,
+            'accessibility_score': latest_snapshot.accessibility_score if latest_snapshot else None,
+            'best_practices_score': latest_snapshot.best_practices_score if latest_snapshot else None,
+            'seo_score': latest_snapshot.seo_score if latest_snapshot else None,
+            'largest_contentful_paint': latest_snapshot.largest_contentful_paint if latest_snapshot else None,
+            'first_contentful_paint': latest_snapshot.first_contentful_paint if latest_snapshot else None,
+            'interaction_to_next_paint': latest_snapshot.interaction_to_next_paint if latest_snapshot else None,
+            'cumulative_layout_shift': latest_snapshot.cumulative_layout_shift if latest_snapshot else None,
+            'time_to_first_byte': latest_snapshot.server_response_time if latest_snapshot else None,
+            'mobile_metrics': None,
+            'desktop_metrics': None,
+            'historical_trends': PerformanceSnapshotSerializer(PerformanceSnapshot.objects.order_by('-created_at')[:10], many=True).data,
+        },
+        'errors': {
+            'error_count': None,
+            'error_frequency': None,
+            'affected_pages': [],
+            'affected_apis': [],
+            'affected_users': [],
+            'resolution_status': None,
+            'message': 'No Data Available',
+        },
+        'api_health': {
+            'endpoints': [],
+            'uptime_percentage': None,
+            'message': 'No Data Available',
+        },
+        'inventory': {
+            'total_inventory_value': inventory_value,
+            'available_stock': products.aggregate(total=Sum('stock_quantity'))['total'],
+            'out_of_stock_products': products.filter(stock_quantity=0).count(),
+            'low_stock_products': products.filter(stock_quantity__lte=models_f('reorder_level')).count(),
+            'negative_inventory': 0,
+            'fast_moving_products': [],
+            'slow_moving_products': [],
+            'supplier_performance': [
+                {'supplier': row['supplier_name'], 'product_count': row['count']}
+                for row in products.exclude(supplier_name='').values('supplier_name').annotate(count=Count('id')).order_by('-count')[:8]
+            ],
+            'inventory_turnover_rate': None,
+            'google_sheets_sync': {
+                'status': latest_sync.last_status if latest_sync else None,
+                'resource': latest_sync.resource if latest_sync else None,
+                'sheet_name': latest_sync.sheet_name if latest_sync else None,
+                'last_pull_at': _iso_or_none(latest_sync.last_pull_at) if latest_sync else None,
+                'last_push_at': _iso_or_none(latest_sync.last_push_at) if latest_sync else None,
+                'message': latest_sync.last_message if latest_sync else 'No Data Available',
+            },
+        },
+        'crm': {
+            'leads_generated': inquiries.count(),
+            'quote_requests': inquiries.filter(inquiry_type='quote').count(),
+            'contact_form_submissions': inquiries.count(),
+            'product_inquiries': inquiries.filter(inquiry_type='product').count(),
+            'whatsapp_clicks': whatsapp_clicks.count(),
+            'phone_clicks': None,
+            'email_clicks': None,
+            'chatbot_conversations': chats.count(),
+            'lead_sources': [
+                {'label': row['inquiry_type'] or 'unknown', 'value': row['count']}
+                for row in inquiry_type_rows
+            ],
+            'top_regions': [
+                {'label': row['country'], 'value': row['count']}
+                for row in country_rows
+            ],
+            'most_requested_chemicals': [
+                {'label': row['product_interest'], 'value': row['count']}
+                for row in product_interest_rows
+            ],
+        },
+        'ai': {
+            'total_requests': None,
+            'requests_today': None,
+            'tokens_consumed': None,
+            'estimated_cost': None,
+            'failed_requests': None,
+            'average_response_time': None,
+            'message': 'No Data Available',
+        },
+        'chatbot': {
+            'conversations': chats.count(),
+            'conversations_today': chats.filter(created_at__date=today).count(),
+            'unresolved_conversations': chats.filter(is_resolved=False).count(),
+            'most_asked_questions': [
+                {'label': row['content'], 'value': row['count']}
+                for row in chatbot_question_rows
+            ],
+            'failed_responses': None,
+            'escalated_conversations': chats.filter(escalated_to_whatsapp=True).count(),
+            'product_requests': [
+                {'label': row['product_interest'], 'value': row['count']}
+                for row in product_request_rows
+            ],
+            'customer_satisfaction_ratings': None,
+        },
+        'security': {
+            'failed_login_attempts': None,
+            'admin_login_activity': None,
+            'suspicious_requests': None,
+            'blocked_ips': None,
+            'rate_limited_requests': None,
+            'unauthorized_access_attempts': None,
+            'message': 'No Data Available',
+        },
+        'business_intelligence': {
+            'revenue_trends': None,
+            'quote_trends': {
+                'today': inquiries.filter(inquiry_type='quote', created_at__date=today).count(),
+                'last_7_days': inquiries.filter(inquiry_type='quote', created_at__date__gte=week_start).count(),
+                'last_30_days': inquiries.filter(inquiry_type='quote', created_at__date__gte=month_start).count(),
+            },
+            'lead_trends': {
+                'today': inquiries.filter(created_at__date=today).count(),
+                'last_7_days': inquiries.filter(created_at__date__gte=week_start).count(),
+                'last_30_days': inquiries.filter(created_at__date__gte=month_start).count(),
+            },
+            'inventory_trends': None,
+            'product_trends': None,
+            'search_trends': None,
+            'customer_trends': None,
+        },
     })
 
 
