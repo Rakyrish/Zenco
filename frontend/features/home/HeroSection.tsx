@@ -8,7 +8,7 @@ import { SITE_CONFIG } from '@/lib/constants'
 
 const STATS = [
   { value: '1000+', sub: 'Products', color: 'text-accent' },
-  { value: '99.9%', sub: 'Purity', color: 'text-white' },
+  { value: '99.9%', sub: 'Quality', color: 'text-white' },
   { value: '500+', sub: 'Client', color: 'text-accent' },
 ]
 
@@ -89,7 +89,7 @@ export default function HeroSection() {
                 <div className="absolute w-16 h-16 rounded-full bg-accent/20 blur-lg animate-pulse-glow" />
                 <div className="relative text-center z-10">
                   <span className="font-display text-3xl font-bold text-white">99.9%</span>
-                  <p className="text-[10px] text-accent/80 uppercase tracking-widest font-bold mt-1">Purity Assured</p>
+                  <p className="text-[10px] text-accent/80 uppercase tracking-widest font-bold mt-1">Quality Assured</p>
                 </div>
                 {/* Orbiting dot */}
                 <div className="absolute w-40 h-40 rounded-full animate-spin-slow">

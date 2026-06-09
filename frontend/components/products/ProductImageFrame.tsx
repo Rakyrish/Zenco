@@ -41,7 +41,7 @@ export default function ProductImageFrame({
           className={`h-full w-full object-cover ${imageClassName}`}
         />
       ) : (
-        <div className="flex h-full min-h-[180px] w-full items-center justify-center bg-zinc-100 text-zinc-400">
+        <div className="flex h-full min-h-[110px] w-full items-center justify-center bg-zinc-100 text-zinc-400 sm:min-h-[150px] md:min-h-[180px]">
           <ImageOff size={34} aria-hidden="true" />
         </div>
       )}
