@@ -341,14 +341,36 @@ export default function ProductPublishingWorkspace({ product }: { product?: Admi
   }
 
   const saveCategory = async () => {
-    const created = await createProductCategory({
-      ...categoryDraft,
-      slug: categoryDraft.slug || slugify(categoryDraft.name),
-    })
-    setCategories(prev => [...prev, created].sort((a, b) => a.name.localeCompare(b.name)))
-    setField('category', created.id)
-    setCategoryModal(false)
-    setCategoryDraft({ name: '', slug: '', description: '', seo_title: '', seo_description: '' })
+    const slug = categoryDraft.slug || slugify(categoryDraft.name)
+    const existing = categories.find(cat =>
+      cat.name.toLowerCase() === categoryDraft.name.toLowerCase()
+      || cat.slug.toLowerCase() === slug.toLowerCase()
+    )
+
+    if (existing) {
+      setField('category', existing.id)
+      setCategoryModal(false)
+      setCategoryDraft({ name: '', slug: '', description: '', seo_title: '', seo_description: '' })
+      setMessage(`Using existing category: ${existing.name}.`)
+      return
+    }
+
+    try {
+      const created = await createProductCategory({
+        ...categoryDraft,
+        slug,
+      })
+      setCategories(prev => {
+        const exists = prev.some(cat => cat.id === created.id || cat.slug.toLowerCase() === created.slug.toLowerCase())
+        return (exists ? prev : [...prev, created]).sort((a, b) => a.name.localeCompare(b.name))
+      })
+      setField('category', created.id)
+      setCategoryModal(false)
+      setCategoryDraft({ name: '', slug: '', description: '', seo_title: '', seo_description: '' })
+      setMessage(`Using category: ${created.name}.`)
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : 'Could not save category.')
+    }
   }
 
   const save = async (status: 'draft' | 'published') => {

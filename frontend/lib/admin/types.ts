@@ -177,6 +177,7 @@ export type InquiryType = 'general' | 'product' | 'quote' | 'partnership' | 'tec
 
 export interface AdminInquiry {
   id: string
+  ticket_number?: string
   full_name: string
   email: string
   phone?: string | null
@@ -189,6 +190,9 @@ export interface AdminInquiry {
   status: InquiryStatus
   admin_notes?: string
   replied_at?: string | null
+  notification_sent?: boolean
+  autoreply_sent?: boolean
+  error_log?: string
   created_at: string
   updated_at: string
 }
@@ -490,3 +494,18 @@ export interface ToastMessage {
   message?: string
   duration?: number
 }
+
+export interface InquiryStats {
+  total_inquiries: number
+  new_inquiries: number
+  replied_inquiries: number
+  quote_requests: number
+  product_inquiries: number
+  monthly_trends: { month: string; count: number }[]
+  conversion_rate: number
+  most_requested_products: { name: string; count: number }[]
+  inquiry_sources: { source: string; count: number }[]
+  email_delivery_success_rate: number
+  autoreply_success_rate: number
+}
+
