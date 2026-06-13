@@ -1,7 +1,7 @@
 """
 Inquiry / Lead Capture model for Zenco Systems Ltd
 """
-from django.db import models
+from django.db import models, transaction
 from django.utils import timezone
 import uuid
 import datetime
@@ -59,8 +59,9 @@ class Inquiry(models.Model):
     # Tracking
     ip_address = models.GenericIPAddressField(null=True, blank=True)
     user_agent = models.TextField(blank=True)
-    referrer = models.URLField(blank=True, max_length=500)
-    source_page = models.URLField(blank=True, max_length=500)
+    # Use TextField (not URLField) — HTTP_REFERER can be empty, relative, or non-URL
+    referrer = models.TextField(blank=True, max_length=500)
+    source_page = models.TextField(blank=True, max_length=500)
 
     # Email Delivery Analytics
     notification_sent = models.BooleanField(default=False, db_index=True)
@@ -87,18 +88,27 @@ class Inquiry(models.Model):
         if not self.ticket_number:
             current_year = datetime.datetime.now().year
             year_prefix = f"FIN-{current_year}-"
-            # Find the latest inquiry in this year to compute the sequence number
-            latest = Inquiry.objects.filter(ticket_number__startswith=year_prefix).order_by('-created_at').first()
-            if latest and latest.ticket_number:
-                try:
-                    last_num = int(latest.ticket_number.split('-')[-1])
-                    new_num = last_num + 1
-                except ValueError:
-                    new_num = Inquiry.objects.filter(ticket_number__startswith=year_prefix).count() + 1
-            else:
-                new_num = 1
-            self.ticket_number = f"{year_prefix}{new_num:06d}"
-        super().save(*args, **kwargs)
+            # Atomic: lock table rows to prevent race-condition duplicate ticket numbers
+            with transaction.atomic():
+                latest = (
+                    Inquiry.objects
+                    .filter(ticket_number__startswith=year_prefix)
+                    .select_for_update()
+                    .order_by('-ticket_number')
+                    .first()
+                )
+                if latest and latest.ticket_number:
+                    try:
+                        last_num = int(latest.ticket_number.split('-')[-1])
+                        new_num = last_num + 1
+                    except ValueError:
+                        new_num = Inquiry.objects.filter(ticket_number__startswith=year_prefix).count() + 1
+                else:
+                    new_num = 1
+                self.ticket_number = f"{year_prefix}{new_num:06d}"
+                super().save(*args, **kwargs)
+        else:
+            super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.ticket_number or 'NO-TICKET'} – {self.name} ({self.inquiry_type})"

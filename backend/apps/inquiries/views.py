@@ -60,19 +60,24 @@ class InquiryCreateView(generics.CreateAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
+        # Sanitize referrer — HTTP_REFERER can be a relative path or malformed URL
+        raw_referrer = request.META.get('HTTP_REFERER', '')
+        safe_referrer = raw_referrer[:500] if raw_referrer else ''
+
         # Capture metadata and save
         inquiry = serializer.save(
             ip_address=client_ip,
             user_agent=request.META.get('HTTP_USER_AGENT', '')[:500],
-            referrer=request.META.get('HTTP_REFERER', '')[:500],
+            referrer=safe_referrer,
         )
 
-        # Send notifications
+        # Send notifications — never let email errors surface as a 500
         try:
             send_inquiry_notification(inquiry)
             send_inquiry_autoreply(inquiry)
         except Exception as e:
-            logger.error(f"Failed to send inquiry emails for {inquiry.ticket_number}: {e}")
+            logger.error(f"Failed to send inquiry emails for {inquiry.ticket_number}: {e}", exc_info=True)
+            # Do NOT re-raise — inquiry is already saved successfully
 
         logger.info(f"New inquiry {inquiry.ticket_number} received from {inquiry.email} [{inquiry.inquiry_type}]")
 
