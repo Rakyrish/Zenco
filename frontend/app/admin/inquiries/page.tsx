@@ -470,10 +470,10 @@ export default function AdminInquiriesPage() {
                   {inq.message}
                 </p>
 
-                {inq.product_interest && (
+                {(inq.product_interest || inq.product_name) && (
                   <div className="bg-gray-50 dark:bg-gray-800/60 rounded-xl p-2.5 text-xs border border-gray-100 dark:border-gray-800">
                     <p className="font-semibold text-gray-700 dark:text-gray-300 truncate">
-                      Product: <span className="font-extrabold text-[#0C094D] dark:text-[#F26C0C]">{inq.product_interest}</span>
+                      Product: <span className="font-extrabold text-[#0C094D] dark:text-[#F26C0C]">{inq.product_interest || inq.product_name}</span>
                     </p>
                     {inq.quantity && <p className="text-[10px] text-gray-400 mt-0.5">Quantity: {inq.quantity}</p>}
                   </div>
@@ -576,10 +576,10 @@ export default function AdminInquiriesPage() {
                 </div>
               </div>
 
-              {selectedInquiry.product_interest && (
+              {(selectedInquiry.product_interest || selectedInquiry.product_name) && (
                 <div className="bg-[#F26C0C]/5 border border-[#F26C0C]/20 rounded-2xl p-4 space-y-1">
                   <p className="text-[10px] font-bold text-[#F26C0C] uppercase tracking-wider">Interested Product Specs</p>
-                  <p className="text-sm font-extrabold text-gray-800 dark:text-gray-200">{selectedInquiry.product_interest}</p>
+                  <p className="text-sm font-extrabold text-gray-800 dark:text-gray-200">{selectedInquiry.product_interest || selectedInquiry.product_name}</p>
                   {selectedInquiry.quantity && (
                     <p className="text-xs text-gray-500 dark:text-gray-400">
                       Requested Volume: <span className="font-semibold text-gray-700 dark:text-gray-300">{selectedInquiry.quantity}</span>

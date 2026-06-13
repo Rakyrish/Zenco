@@ -238,8 +238,8 @@ export async function getAdminQuotes(p?: { search?: string; status?: string; pag
       phone: inq.phone,
       company: inq.company,
       country: inq.country,
-      items: [{ product_name: inq.product_interest || 'General quote', quantity: inq.quantity || '', unit: '' }],
-      status: inq.status === 'new' ? 'pending' : inq.status === 'processing' ? 'reviewing' : inq.status === 'resolved' ? 'quoted' : 'rejected',
+      items: [{ product_name: inq.product_interest || inq.product_name || 'General quote', quantity: inq.quantity || '', unit: '' }],
+      status: inq.status === 'new' ? 'pending' : inq.status === 'in_progress' ? 'reviewing' : inq.status === 'quotation_sent' || inq.status === 'replied' ? 'quoted' : 'rejected',
       priority: 'normal',
       currency: 'KES',
       admin_notes: inq.admin_notes,
@@ -250,7 +250,7 @@ export async function getAdminQuotes(p?: { search?: string; status?: string; pag
 }
 
 export async function updateQuoteStatus(id: string, status: string, admin_notes?: string): Promise<AdminQuote> {
-  const inquiryStatus = status === 'pending' ? 'new' : status === 'reviewing' ? 'processing' : status === 'quoted' || status === 'accepted' ? 'resolved' : 'closed'
+  const inquiryStatus = status === 'pending' ? 'new' : status === 'reviewing' ? 'in_progress' : status === 'quoted' || status === 'accepted' ? 'quotation_sent' : 'closed'
   const inq = await adminFetch<AdminInquiry>(`/inquiries/admin/${id}/`, { method: 'PATCH', body: JSON.stringify({ status: inquiryStatus, ...(admin_notes ? { admin_notes } : {}) }) })
   return {
     id: inq.id,
@@ -260,7 +260,7 @@ export async function updateQuoteStatus(id: string, status: string, admin_notes?
     phone: inq.phone,
     company: inq.company,
     country: inq.country,
-    items: [{ product_name: inq.product_interest || 'General quote', quantity: inq.quantity || '', unit: '' }],
+    items: [{ product_name: inq.product_interest || inq.product_name || 'General quote', quantity: inq.quantity || '', unit: '' }],
     status: status as AdminQuote['status'],
     priority: 'normal',
     currency: 'KES',

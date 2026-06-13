@@ -8,6 +8,8 @@ urlpatterns = [
     path('inventory/<uuid:pk>/', views.InventoryDetailView.as_view()),
     path('inventory/suppliers/', views.suppliers),
     path('analytics/overview/', views.analytics_overview),
+    path('analytics/report', views.analytics_report),
+    path('analytics/report/', views.analytics_report),
     path('analytics/top-products/', views.top_products),
     path('analytics/top-blog-posts/', views.top_blog_posts),
     path('analytics/conversions/', views.conversions),

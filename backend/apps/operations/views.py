@@ -57,7 +57,7 @@ def dashboard_stats(request):
         'total_chatbot_chats': ChatConversation.objects.count(),
         'low_stock_alerts': Product.objects.filter(stock_quantity__lte=models_f('reorder_level')).count(),
         'new_inquiries_today': Inquiry.objects.filter(created_at__date=today).count(),
-        'resolved_today': Inquiry.objects.filter(updated_at__date=today, status__in=['replied', 'closed', 'resolved']).count(),
+        'resolved_today': Inquiry.objects.filter(updated_at__date=today, status__in=['replied', 'closed']).count(),
     })
 
 
@@ -87,7 +87,7 @@ def monitoring_overview(request):
 
     inquiry_type_rows = inquiries.values('inquiry_type').annotate(count=Count('id')).order_by('-count')
     country_rows = inquiries.exclude(country='').values('country').annotate(count=Count('id')).order_by('-count')[:8]
-    product_interest_rows = inquiries.exclude(product_interest='').values('product_interest').annotate(count=Count('id')).order_by('-count')[:8]
+    product_interest_rows = inquiries.exclude(product_name='').values('product_name').annotate(count=Count('id')).order_by('-count')[:8]
     chatbot_question_rows = ChatMessage.objects.filter(role='user').values('content').annotate(count=Count('id')).order_by('-count')[:8]
     product_request_rows = chats.exclude(product_interest='').values('product_interest').annotate(count=Count('id')).order_by('-count')[:8]
 
@@ -230,7 +230,7 @@ def monitoring_overview(request):
                 for row in country_rows
             ],
             'most_requested_chemicals': [
-                {'label': row['product_interest'], 'value': row['count']}
+                {'label': row['product_name'], 'value': row['count']}
                 for row in product_interest_rows
             ],
         },
@@ -352,6 +352,58 @@ def analytics_overview(request):
         'new_users': 0,
         'returning_users': 0,
         'traffic_by_day': traffic,
+    })
+
+
+@api_view(['GET'])
+@permission_classes([IsAdminUser])
+def analytics_report(request):
+    period = request.query_params.get('period') or '30d'
+    days = 90 if period == '90d' else 7 if period == '7d' else 30
+    start = timezone.now().date() - timedelta(days=days - 1)
+
+    traffic_by_day = [
+        {
+            'date': (start + timedelta(days=i)).isoformat(),
+            'users': 0,
+            'sessions': 0,
+        }
+        for i in range(days)
+    ]
+
+    inquiry_count = Inquiry.objects.filter(created_at__date__gte=start).count()
+    quote_count = Inquiry.objects.filter(inquiry_type='quote', created_at__date__gte=start).count()
+    whatsapp_click_count = WhatsAppClick.objects.filter(created_at__date__gte=start).count()
+    page_views = sum(BlogPost.objects.values_list('views_count', flat=True))
+
+    return Response({
+        'period': period,
+        'generated_at': timezone.now().isoformat(),
+        'total_users': 0,
+        'new_users': 0,
+        'active_users': 0,
+        'sessions': 0,
+        'page_views': page_views,
+        'bounce_rate': 0,
+        'avg_session_duration_seconds': 0,
+        'traffic_by_day': traffic_by_day,
+        'top_pages': [
+            {'page': f'/blog/{post.slug}', 'views': post.views_count, 'users': 0}
+            for post in BlogPost.objects.order_by('-views_count')[:10]
+            if post.views_count
+        ],
+        'traffic_sources': [],
+        'countries': [],
+        'devices': [],
+        'conversion_events': [
+            {'event': 'inquiry_submitted', 'count': inquiry_count},
+            {'event': 'quote_request_submitted', 'count': quote_count},
+            {'event': 'whatsapp_button_clicked', 'count': whatsapp_click_count},
+        ],
+        'contact_form_conversions': inquiry_count,
+        'quote_request_conversions': quote_count,
+        'error': 'GA4 Data API is not available on the Django API host. Showing database-backed conversion data.',
+        'using_mock': True,
     })
 
 

@@ -172,8 +172,8 @@ export interface BlogFormData {
 
 // ── Inquiries ─────────────────────────────────────────────────────────────
 
-export type InquiryStatus = 'new' | 'read' | 'processing' | 'resolved' | 'closed'
-export type InquiryType = 'general' | 'product' | 'quote' | 'partnership' | 'technical' | 'complaint'
+export type InquiryStatus = 'new' | 'in_progress' | 'replied' | 'quotation_sent' | 'closed'
+export type InquiryType = 'quote' | 'product' | 'general' | 'consultation' | 'product_info' | 'partnership' | 'technical'
 
 export interface AdminInquiry {
   id: string
@@ -184,7 +184,9 @@ export interface AdminInquiry {
   company?: string | null
   country: string
   inquiry_type: InquiryType
+  product_name?: string | null
   product_interest?: string | null
+  name?: string
   quantity?: string | null
   message: string
   status: InquiryStatus
@@ -508,4 +510,3 @@ export interface InquiryStats {
   email_delivery_success_rate: number
   autoreply_success_rate: number
 }
-
