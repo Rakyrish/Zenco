@@ -6,7 +6,8 @@
  * Injects the gtag.js script once into the document (singleton pattern).
  * Tracks route changes in Next.js App Router via usePathname().
  *
- * Usage: Place inside <head> of root layout.tsx
+ * Usage: Place near the top of <body> in root layout.tsx.
+ * Do not render this client component inside <head>.
  */
 
 import Script from 'next/script'

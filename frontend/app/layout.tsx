@@ -122,10 +122,10 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href={SITE_CONFIG.apiUrl} />
-        {/* Google Analytics 4 — script injected via component to avoid duplicate tags */}
-        <GoogleAnalytics />
       </head>
       <body className="font-sans antialiased bg-surface text-gray-900 transition-colors duration-300 ease-in-out">
+        {/* Google Analytics 4 — script injected via component to avoid duplicate tags */}
+        <GoogleAnalytics />
         {/* Web Vitals → GA4 reporter (renders nothing, side-effect only) */}
         <WebVitalsReporter />
         <ThemeProvider>
