@@ -8,14 +8,14 @@ services:
       - static_volume:/app/staticfiles
       - media_volume:/app/media
     environment:
-      - DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE:-config.settings.production}
+      - DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE}
       - DJANGO_DEBUG=${DJANGO_DEBUG:-False}
-      - DB_NAME=${DB_NAME:-zencodb}
-      - DB_USER=${DB_USER:-zenco}
-      - DB_PASSWORD=${DB_PASSWORD:-zencosecret}
-      - DB_HOST=${DB_HOST_DOCKER:-db}
-      - DB_PORT=${DB_PORT_DOCKER:-5432}
-      - DB_SCHEMA=${DB_SCHEMA:-public}
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_HOST=${DB_HOST_DOCKER}
+      - DB_PORT=${DB_PORT_DOCKER}
+      - DB_SCHEMA=${DB_SCHEMA}
       - REDIS_URL=${REDIS_URL:-redis://redis:6379/1}
       - CELERY_BROKER_URL=${CELERY_BROKER_URL:-redis://redis:6379/0}
       - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND:-redis://redis:6379/1}
@@ -137,12 +137,12 @@ services:
     environment:
       - DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE:-config.settings.production}
       - DJANGO_DEBUG=${DJANGO_DEBUG:-False}
-      - DB_NAME=${DB_NAME:-zencodb}
-      - DB_USER=${DB_USER:-zenco}
-      - DB_PASSWORD=${DB_PASSWORD:-zencosecret}
-      - DB_HOST=${DB_HOST_DOCKER:-db}
-      - DB_PORT=${DB_PORT_DOCKER:-5432}
-      - DB_SCHEMA=${DB_SCHEMA:-public}
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_HOST=${DB_HOST_DOCKER}
+      - DB_PORT=${DB_PORT_DOCKER}
+      - DB_SCHEMA=${DB_SCHEMA}
       - REDIS_URL=${REDIS_URL:-redis://redis:6379/1}
       - CELERY_BROKER_URL=${CELERY_BROKER_URL:-redis://redis:6379/0}
       - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND:-redis://redis:6379/1}
