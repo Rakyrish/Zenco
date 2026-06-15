@@ -59,6 +59,7 @@ export default function ProductDetailExperience({ product }: { product: ProductD
   const schema = product.schema_data || {}
   const label = AVAILABILITY_LABELS[product.availability] || AVAILABILITY_LABELS.in_stock
   const unavailable = isOutOfStock(product)
+  const forceWhiteStatus = unavailable || product.availability === 'in_stock'
   const benefits = listFromSchema(schema.benefits)
   const features = listFromSchema(schema.features)
   const industries = listFromSchema(schema.industries_served)
@@ -122,7 +123,10 @@ export default function ProductDetailExperience({ product }: { product: ProductD
                 <Link href={`/products/category/${product.category.slug}`} className="rounded bg-accent/10 px-3 py-1 text-xs font-extrabold uppercase tracking-widest text-accent">
                   {product.category.name}
                 </Link>
-                <span className={`rounded px-3 py-1 text-xs font-bold ${unavailable ? AVAILABILITY_LABELS.out_of_stock.color : label.color}`}>
+                <span
+                  className={`rounded px-3 py-1 text-xs font-bold ${unavailable ? AVAILABILITY_LABELS.out_of_stock.color : label.color}`}
+                  style={forceWhiteStatus ? { backgroundColor: '#fff' } : undefined}
+                >
                   {unavailable ? 'Out of Stock' : label.label}
                 </span>
               </div>

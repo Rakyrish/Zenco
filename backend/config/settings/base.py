@@ -204,7 +204,8 @@ CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'Africa/Nairobi'
 
 # ─── Email (Resend) ──────────────────────────────────────────────────────────
-RESEND_API_KEY = config('RESEND_API_KEY', default='')
+# Support both RESEND_API_KEY (standard) and RESEND_MAIL (legacy key name)
+RESEND_API_KEY = config('RESEND_API_KEY', default='') or config('RESEND_MAIL', default='')
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='noreply@zencosystems.co.ke')
 ADMIN_EMAIL = config('ADMIN_EMAIL', default='admin@zencosystems.co.ke')
 INQUIRY_NOTIFICATION_EMAIL = config('INQUIRY_NOTIFICATION_EMAIL', default='inquiries@zencosystems.co.ke')

@@ -96,9 +96,9 @@ export const INQUIRY_TYPES = [
 ] as const
 
 export const AVAILABILITY_LABELS: Record<string, { label: string; color: string }> = {
-  in_stock: { label: 'In Stock', color: 'bg-green-600 text-white' },
+  in_stock: { label: 'In Stock', color: 'text-green-600 ring-1 ring-green-200' },
   limited: { label: 'Limited Stock', color: 'text-amber-600 bg-amber-50' },
-  out_of_stock: { label: 'Out of Stock', color: 'bg-red-600 text-white' },
+  out_of_stock: { label: 'Out of Stock', color: 'text-red-600 ring-1 ring-red-200' },
   on_order: { label: 'Available on Order', color: 'text-blue-600 bg-blue-50' },
 }
 

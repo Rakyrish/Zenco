@@ -6,7 +6,7 @@ import type {
   BlogFormData, AdminInquiry, AdminQuote, ChatbotConversation,
   InventoryItem, Supplier, AnalyticsOverview, TopContent, ConversionStats,
   SeoPageMeta, SiteSetting, DashboardStats, AdminUser, AuthTokens,
-  AdminProductCategory, AdminBlogCategory,
+  AdminProductCategory, AdminBlogCategory, MonitoringOverview, InquiryStats,
 } from './types'
 
 const BASE_URL = SITE_CONFIG.apiUrl
@@ -179,16 +179,45 @@ export async function getAdminBlogCategories(): Promise<AdminBlogCategory[]> {
 }
 
 // ─── Inquiries ────────────────────────────────────────────────────────────
-export async function getAdminInquiries(p?: { search?: string; status?: string; page?: number }): Promise<AdminPaginatedResponse<AdminInquiry>> {
+export async function getAdminInquiries(p?: {
+  search?: string
+  status?: string
+  inquiry_type?: string
+  product_name?: string
+  country?: string
+  start_date?: string
+  end_date?: string
+  page?: number
+}): Promise<AdminPaginatedResponse<AdminInquiry>> {
   const q = new URLSearchParams()
   if (p?.search) q.set('search', p.search)
   if (p?.status) q.set('status', p.status)
-  if (p?.page)   q.set('page', String(p.page))
+  if (p?.inquiry_type) q.set('inquiry_type', p.inquiry_type)
+  if (p?.product_name) q.set('product_name', p.product_name)
+  if (p?.country) q.set('country', p.country)
+  if (p?.start_date) q.set('start_date', p.start_date)
+  if (p?.end_date) q.set('end_date', p.end_date)
+  if (p?.page) q.set('page', String(p.page))
   return adminFetch<AdminPaginatedResponse<AdminInquiry>>(`/inquiries/admin/?${q}`)
 }
 
 export async function updateInquiryStatus(id: string, status: string, admin_notes?: string): Promise<AdminInquiry> {
   return adminFetch<AdminInquiry>(`/inquiries/admin/${id}/`, { method: 'PATCH', body: JSON.stringify({ status, ...(admin_notes ? { admin_notes } : {}) }) })
+}
+
+export async function deleteInquiry(id: string): Promise<void> {
+  return adminFetch<void>(`/inquiries/admin/${id}/`, { method: 'DELETE' })
+}
+
+export async function replyToInquiry(id: string, message: string): Promise<{ message: string; status: string; replied_at: string; admin_notes: string }> {
+  return adminFetch<{ message: string; status: string; replied_at: string; admin_notes: string }>(`/inquiries/admin/${id}/reply/`, {
+    method: 'POST',
+    body: JSON.stringify({ message }),
+  })
+}
+
+export async function getInquiryStats(): Promise<InquiryStats> {
+  return adminFetch<InquiryStats>('/inquiries/admin/stats/')
 }
 
 // ─── Quotes ───────────────────────────────────────────────────────────────
@@ -209,8 +238,8 @@ export async function getAdminQuotes(p?: { search?: string; status?: string; pag
       phone: inq.phone,
       company: inq.company,
       country: inq.country,
-      items: [{ product_name: inq.product_interest || 'General quote', quantity: inq.quantity || '', unit: '' }],
-      status: inq.status === 'new' ? 'pending' : inq.status === 'processing' ? 'reviewing' : inq.status === 'resolved' ? 'quoted' : 'rejected',
+      items: [{ product_name: inq.product_interest || inq.product_name || 'General quote', quantity: inq.quantity || '', unit: '' }],
+      status: inq.status === 'new' ? 'pending' : inq.status === 'in_progress' ? 'reviewing' : inq.status === 'quotation_sent' || inq.status === 'replied' ? 'quoted' : 'rejected',
       priority: 'normal',
       currency: 'KES',
       admin_notes: inq.admin_notes,
@@ -221,7 +250,7 @@ export async function getAdminQuotes(p?: { search?: string; status?: string; pag
 }
 
 export async function updateQuoteStatus(id: string, status: string, admin_notes?: string): Promise<AdminQuote> {
-  const inquiryStatus = status === 'pending' ? 'new' : status === 'reviewing' ? 'processing' : status === 'quoted' || status === 'accepted' ? 'resolved' : 'closed'
+  const inquiryStatus = status === 'pending' ? 'new' : status === 'reviewing' ? 'in_progress' : status === 'quoted' || status === 'accepted' ? 'quotation_sent' : 'closed'
   const inq = await adminFetch<AdminInquiry>(`/inquiries/admin/${id}/`, { method: 'PATCH', body: JSON.stringify({ status: inquiryStatus, ...(admin_notes ? { admin_notes } : {}) }) })
   return {
     id: inq.id,
@@ -231,7 +260,7 @@ export async function updateQuoteStatus(id: string, status: string, admin_notes?
     phone: inq.phone,
     company: inq.company,
     country: inq.country,
-    items: [{ product_name: inq.product_interest || 'General quote', quantity: inq.quantity || '', unit: '' }],
+    items: [{ product_name: inq.product_interest || inq.product_name || 'General quote', quantity: inq.quantity || '', unit: '' }],
     status: status as AdminQuote['status'],
     priority: 'normal',
     currency: 'KES',
@@ -286,6 +315,10 @@ export async function getTopBlogPosts(): Promise<TopContent[]> {
 
 export async function getConversionStats(): Promise<ConversionStats> {
   return adminFetch<ConversionStats>('/analytics/conversions/')
+}
+
+export async function getMonitoringOverview(): Promise<MonitoringOverview> {
+  return adminFetch<MonitoringOverview>('/admin/monitoring/overview/')
 }
 
 // ─── SEO ──────────────────────────────────────────────────────────────────

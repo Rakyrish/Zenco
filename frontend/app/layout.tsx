@@ -1,10 +1,10 @@
 import type { Metadata } from 'next'
 import { SITE_CONFIG } from '@/lib/constants'
 import { organizationSchema, localBusinessSchema, websiteSchema } from '@/lib/metadata'
-import Header from '@/components/layout/Header'
-import Footer from '@/components/layout/Footer'
-import ChatbotWidget from '@/components/shared/ChatbotWidget'
 import ThemeProvider from '@/components/shared/ThemeProvider'
+import PublicChrome from '@/components/layout/PublicChrome'
+import GoogleAnalytics from '@/components/shared/GoogleAnalytics'
+import WebVitalsReporter from '@/components/shared/WebVitalsReporter'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -118,19 +118,20 @@ export default function RootLayout({
             __html: JSON.stringify(localBusinessSchema()),
           }}
         />
-        {/* Preconnect for performance */}
+        {/* Preconnect for fonts */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href={SITE_CONFIG.apiUrl} />
       </head>
       <body className="font-sans antialiased bg-surface text-gray-900 transition-colors duration-300 ease-in-out">
+        {/* Google Analytics 4 — script injected via component to avoid duplicate tags */}
+        <GoogleAnalytics />
+        {/* Web Vitals → GA4 reporter (renders nothing, side-effect only) */}
+        <WebVitalsReporter />
         <ThemeProvider>
-          <Header />
-          <main id="main-content" className="min-h-screen">
+          <PublicChrome>
             {children}
-          </main>
-          <Footer />
-          <ChatbotWidget />
+          </PublicChrome>
         </ThemeProvider>
       </body>
     </html>

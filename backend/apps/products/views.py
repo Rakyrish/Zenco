@@ -3,6 +3,8 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAdminUser
 from django_filters.rest_framework import DjangoFilterBackend
+from django.db.models import Q
+from django.utils.text import slugify
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 from .models import Category, Product
@@ -21,6 +23,15 @@ class CategoryViewSet(viewsets.ModelViewSet):
         if self.action in ['list', 'retrieve']:
             return [AllowAny()]
         return [IsAdminUser()]
+
+    def create(self, request, *args, **kwargs):
+        name = (request.data.get('name') or '').strip()
+        slug = (request.data.get('slug') or '').strip() or slugify(name)
+        existing = Category.objects.filter(Q(name__iexact=name) | Q(slug__iexact=slug)).first()
+        if existing:
+            serializer = self.get_serializer(existing)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return super().create(request, *args, **kwargs)
 
     @method_decorator(cache_page(60 * 15))  # Cache 15 mins
     def list(self, request, *args, **kwargs):

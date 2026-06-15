@@ -62,6 +62,9 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_TWITTER_URL: publicEnv('NEXT_PUBLIC_TWITTER_URL', 'TWITTER_URL'),
     NEXT_PUBLIC_TWITTER_HANDLE: publicEnv('NEXT_PUBLIC_TWITTER_HANDLE', 'TWITTER_HANDLE'),
     NEXT_PUBLIC_DEFAULT_KEYWORDS: publicEnv('NEXT_PUBLIC_DEFAULT_KEYWORDS', 'DEFAULT_KEYWORDS'),
+    // Google Analytics 4
+    NEXT_PUBLIC_GA_ID: publicEnv('NEXT_PUBLIC_GA_ID', 'NEXT_PUBLIC_GA_ID'),
+    NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION: publicEnv('NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION', 'NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION'),
   },
 
   images: {
@@ -99,8 +102,8 @@ const nextConfig: NextConfig = {
               "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.googletagmanager.com https://static.cloudflareinsights.com",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
-              `img-src 'self' data: blob: https: https://res.cloudinary.com ${apiOrigin}`,
-              `connect-src 'self' ${apiOrigin} https://cloudflareinsights.com`,
+              `img-src 'self' data: blob: https: https://res.cloudinary.com ${apiOrigin} https://www.google-analytics.com`,
+              `connect-src 'self' ${apiOrigin} https://cloudflareinsights.com https://www.google-analytics.com https://analytics.google.com https://stats.g.doubleclick.net https://region1.google-analytics.com`,
               "frame-src https://www.google.com https://maps.google.com",
             ].join('; '),
           },

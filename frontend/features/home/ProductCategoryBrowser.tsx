@@ -218,7 +218,7 @@ export default function ProductCategoryBrowser({ categories, shelves }: ProductC
             {searchLoading ? (
               <div className="rounded-md border border-dashed border-zinc-200 p-6 text-center text-sm font-bold text-zinc-500">Searching catalog...</div>
             ) : productResults.length ? (
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2.5">
                 {productResults.map((product, productIndex) => (
                   <ProductCard key={product.id} product={product} priority={productIndex < 2} />
                 ))}
@@ -228,37 +228,33 @@ export default function ProductCategoryBrowser({ categories, shelves }: ProductC
             )}
           </section>
         ) : shelves.map(({ category, products, total }, shelfIndex) => {
-          const expanded = category.slug === activeShelf.category.slug
+          const mobileProducts = products.slice(0, products.length > 1 ? 2 : 1)
           return (
             <section key={category.id} className="overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-sm">
-              <button
-                type="button"
-                onClick={() => setActiveSlug(category.slug)}
-                className="flex min-h-14 w-full items-center justify-between gap-4 px-4 text-left text-base font-black text-primary"
-                aria-expanded={expanded}
+              <Link
+                href={`/products/category/${category.slug}`}
+                className="flex min-h-12 w-full items-center justify-between gap-3 px-3.5 text-left text-sm font-black text-primary hover:text-accent"
               >
-                <span>{category.name}</span>
-                <ChevronDown size={18} className={`shrink-0 transition ${expanded ? 'rotate-180 text-accent' : ''}`} />
-              </button>
-              {expanded && (
-                <div className="border-t border-zinc-200 p-4">
-                  <h2 className="sr-only">{category.name}</h2>
-                  <p className="mb-4 text-sm leading-relaxed text-zinc-500">
-                    {category.description || `Latest ${category.name} products supplied by ${SITE_CONFIG.name}.`}
-                  </p>
-                  <div className="grid grid-cols-2 gap-3">
-                    {products.map((product, productIndex) => (
-                      <ProductCard key={product.id} product={product} priority={shelfIndex === 0 && productIndex < 2} />
-                    ))}
-                  </div>
-                  {total > products.length && (
-                    <Link href={`/products/category/${category.slug}`} className="mt-4 inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-black text-white hover:bg-primary-600">
-                      View All Products
-                      <ArrowRight size={16} />
-                    </Link>
-                  )}
+                <span className="line-clamp-1">{category.name}</span>
+                <ArrowRight size={17} className="shrink-0 text-accent" />
+              </Link>
+              <div className="border-t border-zinc-200 p-3">
+                <h2 className="sr-only">{category.name}</h2>
+                <p className="mb-3 line-clamp-2 text-xs leading-relaxed text-zinc-500">
+                  {category.description || `Latest ${category.name} products supplied by ${SITE_CONFIG.name}.`}
+                </p>
+                <div className={`grid gap-2.5 ${mobileProducts.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                  {mobileProducts.map((product, productIndex) => (
+                    <ProductCard key={product.id} product={product} priority={shelfIndex === 0 && productIndex < 2} />
+                  ))}
                 </div>
-              )}
+                {total > mobileProducts.length && (
+                  <Link href={`/products/category/${category.slug}`} className="mt-3 inline-flex h-9 items-center justify-center gap-2 rounded-md bg-primary px-3 text-xs font-black text-white hover:bg-primary-600">
+                    View All Products
+                    <ArrowRight size={16} />
+                  </Link>
+                )}
+              </div>
             </section>
           )
         })}
