@@ -8,17 +8,17 @@ services:
       - static_volume:/app/staticfiles
       - media_volume:/app/media
     environment:
-      - DJANGO_SETTINGS_MODULE=config.settings.production
-      - DJANGO_DEBUG=False
-      - DB_NAME=zencodb
-      - DB_USER=zenco
-      - DB_PASSWORD=zencosecret
-      - DB_HOST=db
-      - DB_PORT=5432
-      - DB_SCHEMA=public
-      - REDIS_URL=redis://redis:6379/1
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/1
+      - DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE}
+      - DJANGO_DEBUG=${DJANGO_DEBUG:-False}
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_SCHEMA=${DB_SCHEMA}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379/1}
+      - CELERY_BROKER_URL=${CELERY_BROKER_URL:-redis://redis:6379/0}
+      - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND:-redis://redis:6379/1}
     env_file:
       - .env
     depends_on:
@@ -26,6 +26,8 @@ services:
       - redis
     expose:
       - "8000"
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
 
   # ─── Next.js Frontend ─────────────────────────────────────────────────────
   frontend:
@@ -33,9 +35,9 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        NEXT_PUBLIC_API_URL: https://zencochemicals.com/api
-        NEXT_PUBLIC_SITE_URL: https://zencochemicals.com
-        INTERNAL_API_URL: http://backend:8000/api
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000/api}
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3000}
+        INTERNAL_API_URL: ${INTERNAL_API_URL:-http://backend:8000/api}
         NEXT_PUBLIC_COMPANY_NAME: ${COMPANY_NAME:-}
         NEXT_PUBLIC_COMPANY_DIVISION: ${COMPANY_DIVISION:-}
         NEXT_PUBLIC_COMPANY_FULL_NAME: ${COMPANY_FULL_NAME:-}
@@ -66,9 +68,9 @@ services:
         NEXT_PUBLIC_TWITTER_HANDLE: ${TWITTER_HANDLE:-}
         NEXT_PUBLIC_DEFAULT_KEYWORDS: ${DEFAULT_KEYWORDS:-}
     environment:
-      - NEXT_PUBLIC_API_URL=https://zencochemicals.com/api
-      - NEXT_PUBLIC_SITE_URL=https://zencochemicals.com
-      - INTERNAL_API_URL=http://backend:8000/api
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8000/api}
+      - NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL:-http://localhost:3000}
+      - INTERNAL_API_URL=${INTERNAL_API_URL:-http://backend:8000/api}
       - NEXT_PUBLIC_COMPANY_NAME=${COMPANY_NAME:-}
       - NEXT_PUBLIC_COMPANY_DIVISION=${COMPANY_DIVISION:-}
       - NEXT_PUBLIC_COMPANY_FULL_NAME=${COMPANY_FULL_NAME:-}
@@ -102,6 +104,8 @@ services:
       - .env
     expose:
       - "3000"
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
 
   # ─── PostgreSQL Database ──────────────────────────────────────────────────
   db:
@@ -109,11 +113,11 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     environment:
-      - POSTGRES_DB=zencodb
-      - POSTGRES_USER=zenco
-      - POSTGRES_PASSWORD=zencosecret
+      - POSTGRES_DB=${DB_NAME:-zencodb}
+      - POSTGRES_USER=${DB_USER:-zenco}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-zencosecret}
     ports:
-      - "5432:5432"
+      - "${DB_PORT:-5432}:5432"
 
   # ─── Redis Cache & Celery Broker ──────────────────────────────────────────
   redis:
@@ -131,17 +135,17 @@ services:
       - redis
       - db
     environment:
-      - DJANGO_SETTINGS_MODULE=config.settings.production
-      - DJANGO_DEBUG=False
-      - DB_NAME=zencodb
-      - DB_USER=zenco
-      - DB_PASSWORD=zencosecret
-      - DB_HOST=db
-      - DB_PORT=5432
-      - DB_SCHEMA=public
-      - REDIS_URL=redis://redis:6379/1
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/1
+      - DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE:-config.settings.production}
+      - DJANGO_DEBUG=${DJANGO_DEBUG:-False}
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_SCHEMA=${DB_SCHEMA}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379/1}
+      - CELERY_BROKER_URL=${CELERY_BROKER_URL:-redis://redis:6379/0}
+      - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND:-redis://redis:6379/1}
     env_file:
       - .env
 
@@ -149,8 +153,8 @@ services:
   nginx:
     image: nginx:alpine
     ports:
-      - "8080:80"
-      - "8443:443"
+      - "80:80"
+      - "443:443"
     volumes:
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
       - static_volume:/app/staticfiles
