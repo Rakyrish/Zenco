@@ -1,0 +1,23 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block content %}
+<div id="content-main" style="max-width: 600px; background: #fff; padding: 20px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+  <p>Select a CSV file to import products. The columns must align with the following structure:</p>
+  
+  <div style="background: #f4f6f9; padding: 10px; border-radius: 4px; margin-bottom: 20px;">
+    <code style="font-family: monospace; font-size: 13px;">name, category, sku, stock_quantity, reorder_level, availability, price_per_unit, cost_per_unit, status, description</code>
+  </div>
+
+  <form action="" method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <div style="margin-bottom: 20px;">
+      {{ form.as_p }}
+    </div>
+    <div>
+      <input type="submit" value="{% translate 'Upload and Import' %}" class="default" style="background: #F26C0C; color: #fff; border: 0; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold;" />
+      <a href=".." style="margin-left: 15px; text-decoration: none; color: #666;">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

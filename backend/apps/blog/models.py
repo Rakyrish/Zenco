@@ -61,6 +61,7 @@ class BlogPost(models.Model):
     # Status
     is_published = models.BooleanField(default=False)
     is_featured = models.BooleanField(default=False)
+    is_deleted = models.BooleanField(default=False)
     views_count = models.PositiveIntegerField(default=0)
 
     # Timestamps
@@ -74,6 +75,7 @@ class BlogPost(models.Model):
             models.Index(fields=['slug']),
             models.Index(fields=['is_published', '-published_at']),
             models.Index(fields=['is_featured']),
+            models.Index(fields=['is_deleted']),
         ]
 
     def __str__(self):

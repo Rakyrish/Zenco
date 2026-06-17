@@ -151,3 +151,118 @@ class KnowledgeCache(models.Model):
 
     def __str__(self):
         return f'{self.page_label} ({self.url})'
+
+
+class PageContent(models.Model):
+    page_key = models.SlugField(max_length=100, unique=True, help_text="e.g. 'home', 'about', 'privacy', 'terms'")
+    title = models.CharField(max_length=255)
+    subtitle = models.CharField(max_length=255, blank=True)
+    content = models.TextField(help_text="Main content (HTML/Markdown supported)")
+    meta_keywords = models.CharField(max_length=255, blank=True)
+    last_updated = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['page_key']
+        verbose_name = 'Page Content'
+        verbose_name_plural = 'Page Contents'
+
+    def __str__(self):
+        return self.title
+
+
+class FaqEntry(models.Model):
+    question = models.CharField(max_length=255)
+    answer = models.TextField()
+    sort_order = models.PositiveIntegerField(default=0)
+    is_published = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['sort_order']
+        verbose_name = 'FAQ Entry'
+        verbose_name_plural = 'FAQ Entries'
+
+    def __str__(self):
+        return self.question
+
+
+class RedirectRule(models.Model):
+    old_path = models.CharField(max_length=255, unique=True, help_text="e.g. /old-path/")
+    new_path = models.CharField(max_length=255, help_text="e.g. /new-path/")
+    is_permanent = models.BooleanField(default=True, help_text="True for 301, False for 302")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['old_path']
+
+    def __str__(self):
+        return f"{self.old_path} -> {self.new_path}"
+
+
+class MediaFile(models.Model):
+    title = models.CharField(max_length=255, blank=True)
+    file = models.FileField(upload_to='media_library/')
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    file_size = models.PositiveIntegerField(default=0, help_text="Size in bytes")
+    is_optimized = models.BooleanField(default=False)
+    usage_count = models.PositiveIntegerField(default=0, help_text="Number of times used on site")
+
+    class Meta:
+        ordering = ['-uploaded_at']
+
+    def __str__(self):
+        return self.title or self.file.name
+
+
+class ApiRequestLog(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    path = models.CharField(max_length=255)
+    method = models.CharField(max_length=10)
+    status_code = models.PositiveIntegerField()
+    response_time_ms = models.FloatField()
+    error_message = models.TextField(blank=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.method} {self.path} - {self.status_code}"
+
+
+class AuditLog(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(
+        'accounts.ZencoUser', on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='audit_logs'
+    )
+    action = models.CharField(max_length=50)  # CREATE, UPDATE, DELETE, LOGIN
+    model_name = models.CharField(max_length=100, blank=True)
+    object_id = models.CharField(max_length=100, blank=True)
+    changes = models.JSONField(default=dict)  # old_value, new_value
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.TextField(blank=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-timestamp']
+
+    def __str__(self):
+        user_str = self.user.email if self.user else "System"
+        return f"{self.action} on {self.model_name} by {user_str} at {self.timestamp}"
+
+
+class LoginAttempt(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    username = models.CharField(max_length=150)
+    ip_address = models.GenericIPAddressField()
+    is_successful = models.BooleanField(default=False)
+    user_agent = models.TextField(blank=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-timestamp']
+
+    def __str__(self):
+        status = "SUCCESS" if self.is_successful else "FAILED"
+        return f"{self.username} ({status}) from {self.ip_address} at {self.timestamp}"
