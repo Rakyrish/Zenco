@@ -94,7 +94,7 @@ class Inquiry(models.Model):
     def save(self, *args, **kwargs):
         if not self.ticket_number:
             current_year = datetime.datetime.now().year
-            year_prefix = f"FIN-{current_year}-"
+            year_prefix = f"ZEN-{current_year}-"
             # Atomic: lock table rows to prevent race-condition duplicate ticket numbers
             with transaction.atomic():
                 latest = (
