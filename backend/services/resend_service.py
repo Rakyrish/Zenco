@@ -136,7 +136,7 @@ def send_admin_reply_email(inquiry, reply_message: str) -> bool:
 
 
 def _build_admin_notification_html(inquiry) -> str:
-    site_url = getattr(settings, 'SITE_URL', 'https://zencosystems.co.ke')
+    site_url = getattr(settings, 'SITE_URL', 'https://zencochemicals.com')
     dashboard_url = f"{site_url}/admin/inquiries"
     
     product_section = ""

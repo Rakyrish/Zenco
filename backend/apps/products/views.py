@@ -3,7 +3,8 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAdminUser
 from django_filters.rest_framework import DjangoFilterBackend
-from django.db.models import Q
+from rest_framework.pagination import PageNumberPagination
+from django.db.models import Q, Count, Prefetch
 from django.utils.text import slugify
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
@@ -14,10 +15,34 @@ from .serializers import (
 )
 
 
+class CategoryPagination(PageNumberPagination):
+    page_size = 100
+    page_size_query_param = 'page_size'
+    max_page_size = 1000
+
+
 class CategoryViewSet(viewsets.ModelViewSet):
-    queryset = Category.objects.filter(is_active=True).prefetch_related('products')
     serializer_class = CategorySerializer
     lookup_field = 'slug'
+    pagination_class = CategoryPagination
+
+    def get_queryset(self):
+        product_prefetch = Prefetch(
+            'products',
+            queryset=Product.objects.filter(
+                is_active=True,
+                is_deleted=False
+            ).order_by('-created_at'),
+            to_attr='prefetched_active_products'
+        )
+        return Category.objects.filter(
+            is_active=True
+        ).annotate(
+            annotated_product_count=Count(
+                'products',
+                filter=Q(products__is_active=True, products__is_deleted=False)
+            )
+        ).prefetch_related(product_prefetch)
 
     def get_permissions(self):
         if self.action in ['list', 'retrieve']:

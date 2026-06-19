@@ -3,15 +3,29 @@ from .models import Category, Product
 
 
 class CategorySerializer(serializers.ModelSerializer):
-    product_count = serializers.ReadOnlyField()
+    product_count = serializers.SerializerMethodField()
+    products = serializers.SerializerMethodField()
 
     class Meta:
         model = Category
         fields = [
             'id', 'name', 'slug', 'description', 'icon',
             'image', 'sort_order', 'seo_title', 'seo_description',
-            'product_count', 'is_active',
+            'product_count', 'is_active', 'products',
         ]
+
+    def get_product_count(self, obj):
+        # Use the annotated count if available to avoid N+1 query
+        val = getattr(obj, 'annotated_product_count', None)
+        if val is not None:
+            return val
+        return obj.product_count
+
+    def get_products(self, obj):
+        # Return prefetched active products, limited to 8
+        products = getattr(obj, 'prefetched_active_products', [])[:8]
+        return ProductListSerializer(products, many=True, context=self.context).data
+
 
 
 class ProductListSerializer(serializers.ModelSerializer):
