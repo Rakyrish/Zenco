@@ -15,7 +15,11 @@ export default function Footer() {
   const [categories, setCategories] = useState<Category[]>([])
 
   useEffect(() => {
-    getCategories().then(setCategories).catch(() => setCategories([]))
+    getCategories()
+      .then(data => {
+        setCategories(data.filter(cat => cat.is_active !== false && cat.product_count > 0))
+      })
+      .catch(() => setCategories([]))
   }, [])
 
   return (
@@ -150,8 +154,8 @@ export default function Footer() {
             <h3 className="text-white font-bold text-sm uppercase tracking-widest mb-5">
               Product Categories
             </h3>
-            <ul className="space-y-2.5">
-              {categories.slice(0, 8).map(cat => (
+            <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-x-6 gap-y-2.5">
+              {categories.map(cat => (
                 <li key={cat.slug}>
                   <Link
                     href={`/products/category/${cat.slug}`}

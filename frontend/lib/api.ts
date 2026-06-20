@@ -61,7 +61,7 @@ async function fetchAPI<T>(
 // ─── Products ─────────────────────────────────────────────────────────────
 
 export async function getCategories(): Promise<Category[]> {
-  const data = await fetchAPI<PaginatedResponse<Category>>('/products/categories/', {}, 'force-cache', 3600)
+  const data = await fetchAPI<PaginatedResponse<Category>>('/products/categories/?page_size=1000', {}, 'force-cache', 3600)
   return data.results
 }
 

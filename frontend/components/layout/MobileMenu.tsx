@@ -20,7 +20,11 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
   const [categories, setCategories] = useState<Category[]>([])
 
   useEffect(() => {
-    getCategories().then(setCategories).catch(() => setCategories([]))
+    getCategories()
+      .then(data => {
+        setCategories(data.filter(cat => cat.is_active !== false && cat.product_count > 0))
+      })
+      .catch(() => setCategories([]))
   }, [])
 
   useEffect(() => {
@@ -86,7 +90,7 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
             <p className="text-white/40 text-xs font-bold uppercase tracking-widest px-4 mb-3">
               Product Categories
             </p>
-            {categories.slice(0, 6).map(cat => (
+            {categories.map(cat => (
               <Link
                 key={cat.slug}
                 href={`/products/category/${cat.slug}`}

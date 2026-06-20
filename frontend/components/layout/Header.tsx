@@ -52,7 +52,11 @@ export default function Header() {
   }, [])
 
   useEffect(() => {
-    getCategories().then(setCategories).catch(() => setCategories([]))
+    getCategories()
+      .then(data => {
+        setCategories(data.filter(cat => cat.is_active !== false && cat.product_count > 0))
+      })
+      .catch(() => setCategories([]))
   }, [])
 
   useEffect(() => {
@@ -227,7 +231,7 @@ export default function Header() {
                           Product Categories
                         </p>
                         <div className="grid grid-cols-3 gap-3">
-                          {categories.slice(0, 9).map(cat => (
+                          {categories.map(cat => (
                             <Link
                               key={cat.slug}
                               href={`/products/category/${cat.slug}`}
