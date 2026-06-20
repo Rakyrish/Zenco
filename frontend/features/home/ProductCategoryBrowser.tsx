@@ -112,7 +112,7 @@ export default function ProductCategoryBrowser({ categories, shelves }: ProductC
       </div>
 
       <div className="hidden overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-sm lg:grid lg:grid-cols-[260px_1fr]">
-        <nav className="border-r border-zinc-200 bg-zinc-50 p-3" aria-label="Featured product categories">
+        <nav className="border-r border-zinc-200 bg-zinc-50 p-3 max-h-[600px] overflow-y-auto space-y-1" aria-label="Featured product categories">
           {shelves.map(({ category }, index) => {
             const active = category.slug === activeShelf.category.slug
             return (

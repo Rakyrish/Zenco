@@ -10,7 +10,6 @@ function getHomepageShelves(categories: Category[]): CategoryShelf[] {
   const activeCategories = categories
     .filter(category => category.is_active !== false && category.product_count > 0)
     .sort((a, b) => a.sort_order - b.sort_order)
-    .slice(0, 7)
 
   const shelves = activeCategories.map(category => {
     return {
@@ -30,6 +29,7 @@ export default async function FeaturedProducts() {
     getCategories().catch(() => []),
     getFeaturedProducts().catch(() => []),
   ])
+  const filteredCategories = categories.filter(cat => cat.is_active !== false && cat.product_count > 0)
   const shelves = getHomepageShelves(categories)
   const featured = featuredData.slice(0, 8)
 
@@ -71,7 +71,7 @@ export default async function FeaturedProducts() {
           </div>
         )} */}
 
-        <ProductCategoryBrowser categories={categories} shelves={shelves} />
+        <ProductCategoryBrowser categories={filteredCategories} shelves={shelves} />
       </div>
     </section>
   )
