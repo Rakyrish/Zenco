@@ -62,6 +62,15 @@ export const PRODUCT_CATEGORIES = [
   { name: 'Coolants & Thermoregulation', slug: 'coolants-thermoregulation', icon: 'Thermometer' },
   { name: 'Preservation Chemicals', slug: 'preservation-chemicals', icon: 'Shield' },
   { name: 'Pharma & Cosmetics', slug: 'pharmaceuticals-cosmetics', icon: 'Pill' },
+  { name: 'Detergents & soaps', slug: 'detergents-soaps', icon: 'Sparkles' },
+  { name: 'Foods & Beverages', slug: 'foods-beverages', icon: 'UtensilsCrossed' },
+  { name: 'insulation materials', slug: 'insulation-materials', icon: 'Building2' },
+  { name: ' metal treatment Chemicals', slug: 'metal-treatment-chemicals', icon: 'Cog' },
+  { name: 'Paper & Pulp', slug: 'paper-pulp', icon: 'Newspaper' },
+  { name: 'mining Chemicals', slug: 'mining-chemicals', icon: 'Cog' },
+  { name: ' Oil & Gas', slug: 'oil-gas', icon: 'Zap' },
+  { name: 'Rubber & Plastic', slug: 'rubber-plastic', icon: 'Cog' },
+  { name: 'Textile Treatment', slug: 'textile-treatment', icon: 'Shirt' },
 ] as const
 
 export const INDUSTRIES = [
