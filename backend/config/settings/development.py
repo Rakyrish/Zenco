@@ -6,10 +6,10 @@ ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0']
 # Development uses the PostgreSQL configuration from base.py.
 # Configure DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, and DB_PORT in .env.
 
-# Simple in-memory cache for dev
+# Dummy cache for dev to prevent stale cached API responses
 CACHES = {
     'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
     }
 }
 

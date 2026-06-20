@@ -146,7 +146,7 @@ function ContactContent() {
             <CheckCircle size={56} className="text-green-500 mx-auto" />
             <h2 className="text-2xl font-bold text-primary">Inquiry Submitted Successfully</h2>
             <p className="text-sm text-gray-500 leading-relaxed">
-              Thank you for reaching out. We have logged your request. A confirmation email has been dispatched, and our account manager will follow up within <strong>24 business hours</strong>.
+              Thank you for reaching out. We have logged your request. A confirmation email has been dispatched, and our account manager will follow up within <strong>few hours</strong>.
             </p>
             <button
               onClick={() => setSubmitted(false)}

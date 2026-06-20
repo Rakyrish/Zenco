@@ -8,6 +8,10 @@ import uuid
 
 class Category(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    parent = models.ForeignKey(
+        'self', on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='subcategories'
+    )
     name = models.CharField(max_length=150, unique=True)
     slug = models.SlugField(max_length=170, unique=True, blank=True)
     description = models.TextField(blank=True)
@@ -17,6 +21,7 @@ class Category(models.Model):
     seo_title = models.CharField(max_length=70, blank=True)
     seo_description = models.CharField(max_length=160, blank=True)
     is_active = models.BooleanField(default=True)
+    is_deleted = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -25,6 +30,8 @@ class Category(models.Model):
         ordering = ['sort_order', 'name']
 
     def __str__(self):
+        if self.parent:
+            return f"{self.parent.name} > {self.name}"
         return self.name
 
     def save(self, *args, **kwargs):
@@ -34,7 +41,20 @@ class Category(models.Model):
 
     @property
     def product_count(self):
-        return self.products.filter(is_active=True).count()
+        return self.products.filter(is_active=True, is_deleted=False).count()
+
+
+class Supplier(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=255, unique=True)
+    contact_name = models.CharField(max_length=150, blank=True)
+    email = models.EmailField(blank=True)
+    phone = models.CharField(max_length=50, blank=True)
+    address = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
 
 
 class Product(models.Model):
@@ -70,7 +90,14 @@ class Product(models.Model):
     reorder_level = models.PositiveIntegerField(default=0)
     unit = models.CharField(max_length=50, default='units')
     sku = models.CharField(max_length=80, blank=True)
-    supplier_name = models.CharField(max_length=180, blank=True)
+    
+    # Supplier assignment
+    supplier = models.ForeignKey(
+        Supplier, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='products'
+    )
+    supplier_name = models.CharField(max_length=180, blank=True, help_text="Legacy/backup supplier name")
+    
     cost_per_unit = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     last_restocked = models.DateTimeField(null=True, blank=True)
     availability = models.CharField(
@@ -83,6 +110,7 @@ class Product(models.Model):
     )
     is_featured = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
+    is_deleted = models.BooleanField(default=False)
     sort_order = models.PositiveIntegerField(default=0)
 
     # SEO
@@ -105,7 +133,7 @@ class Product(models.Model):
         ordering = ['sort_order', 'name']
         indexes = [
             models.Index(fields=['slug']),
-            models.Index(fields=['is_featured', 'is_active']),
+            models.Index(fields=['is_featured', 'is_active', 'is_deleted']),
             models.Index(fields=['category']),
         ]
 
@@ -142,9 +170,36 @@ class Product(models.Model):
     @property
     def related_products(self):
         return Product.objects.filter(
-            category=self.category, is_active=True
+            category=self.category, is_active=True, is_deleted=False
         ).exclude(pk=self.pk)[:4]
 
     @property
     def is_low_stock(self):
         return self.stock_quantity <= self.reorder_level
+
+
+class StockMovement(models.Model):
+    MOVEMENT_TYPES = [
+        ('restock', 'Restock / Inbound'),
+        ('sale', 'Sale / Outbound'),
+        ('adjustment', 'Manual Adjustment'),
+        ('return', 'Customer Return'),
+        ('damaged', 'Damaged / Write-off'),
+    ]
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='stock_movements')
+    quantity = models.IntegerField(help_text='Positive for inbound, negative for outbound')
+    movement_type = models.CharField(max_length=20, choices=MOVEMENT_TYPES)
+    reference = models.CharField(max_length=255, blank=True, help_text='Invoice #, Order #, or Reason')
+    notes = models.TextField(blank=True)
+    user = models.ForeignKey(
+        'accounts.ZencoUser', on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='stock_movements'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.product.name} ({self.quantity}) - {self.movement_type}"

@@ -50,16 +50,19 @@ class Inquiry(models.Model):
     )
     message = models.TextField()
 
-    # Admin
+    # Admin / CRM
     status = models.CharField(
         max_length=30, choices=STATUS_CHOICES, default='new', db_index=True
     )
     admin_notes = models.TextField(blank=True)
+    assigned_to = models.ForeignKey(
+        'accounts.ZencoUser', on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='assigned_inquiries'
+    )
 
     # Tracking
     ip_address = models.GenericIPAddressField(null=True, blank=True)
     user_agent = models.TextField(blank=True)
-    # Use TextField (not URLField) — HTTP_REFERER can be empty, relative, or non-URL
     referrer = models.TextField(blank=True, max_length=500)
     source_page = models.TextField(blank=True, max_length=500)
 
@@ -67,6 +70,9 @@ class Inquiry(models.Model):
     notification_sent = models.BooleanField(default=False, db_index=True)
     autoreply_sent = models.BooleanField(default=False, db_index=True)
     error_log = models.TextField(blank=True, help_text='Logs of any email sending failures')
+
+    # Soft Delete
+    is_deleted = models.BooleanField(default=False)
 
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
@@ -82,12 +88,13 @@ class Inquiry(models.Model):
             models.Index(fields=['email']),
             models.Index(fields=['ticket_number']),
             models.Index(fields=['inquiry_type']),
+            models.Index(fields=['is_deleted']),
         ]
 
     def save(self, *args, **kwargs):
         if not self.ticket_number:
             current_year = datetime.datetime.now().year
-            year_prefix = f"FIN-{current_year}-"
+            year_prefix = f"ZEN-{current_year}-"
             # Atomic: lock table rows to prevent race-condition duplicate ticket numbers
             with transaction.atomic():
                 latest = (
@@ -112,3 +119,37 @@ class Inquiry(models.Model):
 
     def __str__(self):
         return f"{self.ticket_number or 'NO-TICKET'} – {self.name} ({self.inquiry_type})"
+
+
+class Customer(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=150)
+    email = models.EmailField(unique=True)
+    phone = models.CharField(max_length=50, blank=True)
+    company = models.CharField(max_length=200, blank=True)
+    country = models.CharField(max_length=100, default='Kenya')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        if self.company:
+            return f"{self.name} ({self.company})"
+        return self.name
+
+
+class FollowUp(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    inquiry = models.ForeignKey(Inquiry, on_delete=models.CASCADE, related_name='followups')
+    notes = models.TextField()
+    scheduled_date = models.DateTimeField(null=True, blank=True)
+    completed = models.BooleanField(default=False)
+    assigned_to = models.ForeignKey(
+        'accounts.ZencoUser', on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='followups'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Follow-up for {self.inquiry.ticket_number} - {'Completed' if self.completed else 'Pending'}"

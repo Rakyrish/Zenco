@@ -2,43 +2,35 @@ import Link from 'next/link'
 import { ArrowRight, MessageCircle } from 'lucide-react'
 import ProductCard from '@/components/products/ProductCard'
 import { whatsappHref } from '@/components/products/product-helpers'
-import { getCategories, getFeaturedProducts, getProducts } from '@/lib/api'
+import { getCategories, getFeaturedProducts } from '@/lib/api'
 import { SITE_CONFIG } from '@/lib/constants'
 import ProductCategoryBrowser, { type CategoryShelf } from './ProductCategoryBrowser'
 
-async function getHomepageShelves(categories: Awaited<ReturnType<typeof getCategories>>): Promise<CategoryShelf[]> {
+function getHomepageShelves(categories: Category[]): CategoryShelf[] {
   const activeCategories = categories
     .filter(category => category.is_active !== false && category.product_count > 0)
     .sort((a, b) => a.sort_order - b.sort_order)
     .slice(0, 7)
 
-  const shelves = await Promise.all(
-    activeCategories.map(async category => {
-      const data = await getProducts({
-        category: category.slug,
-        ordering: '-created_at',
-        page: 1,
-        cache: 'force-cache',
-        revalidate: 1800,
-      })
-
-      return {
-        category,
-        products: data.results.slice(0, 8),
-        total: data.count,
-      }
-    }),
-  )
+  const shelves = activeCategories.map(category => {
+    return {
+      category,
+      products: category.products || [],
+      total: category.product_count,
+    }
+  })
 
   return shelves.filter(shelf => shelf.products.length > 0)
 }
 
+import type { Category } from '@/types'
+
 export default async function FeaturedProducts() {
-  const categories = await getCategories().catch(() => [])
-  const [featuredData, shelves] = await Promise.all([
+  const [categories, featuredData] = await Promise.all([
+    getCategories().catch(() => []),
     getFeaturedProducts().catch(() => []),
-    getHomepageShelves(categories).catch(() => []),
   ])
+  const shelves = getHomepageShelves(categories)
   const featured = featuredData.slice(0, 8)
 
   return (

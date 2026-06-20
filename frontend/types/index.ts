@@ -12,6 +12,7 @@ export interface Category {
   seo_description: string
   product_count: number
   is_active: boolean
+  products?: ProductListItem[]
 }
 
 export interface ProductListItem {
