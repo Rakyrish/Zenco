@@ -40,6 +40,7 @@ django-haystack==3.3.0
 shortuuid==1.0.13
 Markdown==3.6
 openai>=1.93.0
+weasyprint==62.3
 
 # Dev/Testing
 pytest-django==4.8.0

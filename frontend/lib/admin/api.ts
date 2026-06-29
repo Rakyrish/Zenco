@@ -6,7 +6,9 @@ import type {
   BlogFormData, AdminInquiry, AdminQuote, ChatbotConversation,
   InventoryItem, Supplier, AnalyticsOverview, TopContent, ConversionStats,
   SeoPageMeta, SiteSetting, DashboardStats, AdminUser, AuthTokens,
-  AdminProductCategory, AdminBlogCategory, MonitoringOverview, InquiryStats,
+  AdminProductCategory, AdminBlogCategory, AdminBlogTag, MonitoringOverview, InquiryStats,
+  TechnicalDocument, BlogGenerationLog, AIBlogGenerationResult,
+  ProductDataSheet, DatasheetOverview, AIDatasheetGenerationResult, BulkDatasheetTaskStatus,
 } from './types'
 
 const BASE_URL = SITE_CONFIG.apiUrl
@@ -176,6 +178,162 @@ export async function deleteBlogPost(id: string): Promise<void> {
 export async function getAdminBlogCategories(): Promise<AdminBlogCategory[]> {
   const data = await adminFetch<AdminPaginatedResponse<AdminBlogCategory>>('/blog/categories/')
   return data.results
+}
+
+export async function getAdminBlogTags(): Promise<AdminBlogTag[]> {
+  const data = await adminFetch<AdminPaginatedResponse<AdminBlogTag>>('/blog/tags/')
+  return data.results
+}
+
+// ─── Technical Documents ─────────────────────────────────────────────────────
+
+export async function getTechnicalDocuments(p?: {
+  search?: string
+  doc_type?: string
+  page?: number
+}): Promise<AdminPaginatedResponse<TechnicalDocument>> {
+  const q = new URLSearchParams()
+  if (p?.search)   q.set('search', p.search)
+  if (p?.doc_type) q.set('doc_type', p.doc_type)
+  if (p?.page)     q.set('page', String(p.page))
+  return adminFetch<AdminPaginatedResponse<TechnicalDocument>>(`/blog/technical-docs/?${q}`)
+}
+
+export async function getTechnicalDocumentBySlug(slug: string): Promise<TechnicalDocument> {
+  return adminFetch<TechnicalDocument>(`/blog/technical-docs/${slug}/`)
+}
+
+export async function getAdminTechnicalDocuments(p?: {
+  search?: string
+  doc_type?: string
+  is_published?: boolean
+  page?: number
+}): Promise<AdminPaginatedResponse<TechnicalDocument>> {
+  const q = new URLSearchParams()
+  if (p?.search)                q.set('search', p.search)
+  if (p?.doc_type)              q.set('doc_type', p.doc_type)
+  if (p?.is_published !== undefined) q.set('is_published', String(p.is_published))
+  if (p?.page)                  q.set('page', String(p.page))
+  return adminFetch<AdminPaginatedResponse<TechnicalDocument>>(`/blog/technical-docs/admin/?${q}`)
+}
+
+export async function createTechnicalDocument(data: Partial<TechnicalDocument>): Promise<TechnicalDocument> {
+  return adminFetch<TechnicalDocument>('/blog/technical-docs/admin/', { method: 'POST', body: JSON.stringify(data) })
+}
+
+export async function updateTechnicalDocument(id: string, data: Partial<TechnicalDocument>): Promise<TechnicalDocument> {
+  return adminFetch<TechnicalDocument>(`/blog/technical-docs/admin/${id}/`, { method: 'PATCH', body: JSON.stringify(data) })
+}
+
+export async function deleteTechnicalDocument(id: string): Promise<void> {
+  return adminFetch<void>(`/blog/technical-docs/admin/${id}/`, { method: 'DELETE' })
+}
+
+// ─── Blog Generation Logs ─────────────────────────────────────────────────────
+
+export async function getBlogGenerationLogs(p?: { search?: string; page?: number }): Promise<AdminPaginatedResponse<BlogGenerationLog>> {
+  const q = new URLSearchParams()
+  if (p?.search) q.set('search', p.search)
+  if (p?.page)   q.set('page', String(p.page))
+  return adminFetch<AdminPaginatedResponse<BlogGenerationLog>>(`/blog/generation-logs/?${q}`)
+}
+
+// ─── AI Blog Generation ───────────────────────────────────────────────────────
+
+export async function generateBlogWithAI(topic: string): Promise<AIBlogGenerationResult> {
+  return adminFetch<AIBlogGenerationResult>('/blog/admin/generate-sync/', {
+    method: 'POST',
+    body: JSON.stringify({ topic }),
+  })
+}
+
+export async function runBlogQualityAudit(id: string): Promise<{
+  total_score: number
+  pass_save: boolean
+  pass_publish: boolean
+  breakdown: Record<string, number>
+  details: string[]
+  feedback: string
+}> {
+  return adminFetch(`/blog/admin/${id}/audit/`, { method: 'POST' })
+}
+
+// ─── Product Data Sheets ────────────────────────────────────────────────────
+
+export async function getDatasheetOverview(): Promise<DatasheetOverview> {
+  return adminFetch<DatasheetOverview>('/datasheets/admin/overview/')
+}
+
+export async function getAdminProductDataSheets(p?: {
+  search?: string
+  status?: string
+  ai_generated?: boolean
+  page?: number
+}): Promise<AdminPaginatedResponse<ProductDataSheet>> {
+  const q = new URLSearchParams()
+  if (p?.search) q.set('search', p.search)
+  if (p?.status) q.set('status', p.status)
+  if (p?.ai_generated !== undefined) q.set('ai_generated', String(p.ai_generated))
+  if (p?.page) q.set('page', String(p.page))
+  return adminFetch<AdminPaginatedResponse<ProductDataSheet>>(`/datasheets/admin/?${q}`)
+}
+
+export async function getAdminProductDataSheetById(id: number): Promise<ProductDataSheet> {
+  return adminFetch<ProductDataSheet>(`/datasheets/admin/${id}/`)
+}
+
+export async function updateProductDataSheet(id: number, data: Partial<ProductDataSheet>): Promise<ProductDataSheet> {
+  return adminFetch<ProductDataSheet>(`/datasheets/admin/${id}/`, { method: 'PATCH', body: JSON.stringify(data) })
+}
+
+export async function deleteProductDataSheet(id: number): Promise<void> {
+  return adminFetch<void>(`/datasheets/admin/${id}/`, { method: 'DELETE' })
+}
+
+export async function generateDatasheetWithAI(productId: string, regenerate = false): Promise<AIDatasheetGenerationResult> {
+  return adminFetch<AIDatasheetGenerationResult>('/datasheets/admin/generate-sync/', {
+    method: 'POST',
+    body: JSON.stringify({ product_id: productId, regenerate }),
+  })
+}
+
+export async function regenerateDatasheet(id: number): Promise<AIDatasheetGenerationResult> {
+  return adminFetch<AIDatasheetGenerationResult>(`/datasheets/admin/${id}/regenerate/`, { method: 'POST' })
+}
+
+export async function publishProductDataSheet(id: number): Promise<ProductDataSheet> {
+  return adminFetch<ProductDataSheet>(`/datasheets/admin/${id}/publish/`, { method: 'POST' })
+}
+
+export async function unpublishProductDataSheet(id: number): Promise<ProductDataSheet> {
+  return adminFetch<ProductDataSheet>(`/datasheets/admin/${id}/unpublish/`, { method: 'POST' })
+}
+
+export async function bulkGenerateDatasheets(): Promise<{ status: string; task_id: string }> {
+  return adminFetch('/datasheets/admin/bulk-generate/', { method: 'POST' })
+}
+
+export async function getBulkDatasheetStatus(taskId: string): Promise<BulkDatasheetTaskStatus> {
+  return adminFetch<BulkDatasheetTaskStatus>(`/datasheets/admin/bulk-status/?task_id=${taskId}`)
+}
+
+export function getDatasheetPdfDownloadUrl(id: number): string {
+  return `${BASE_URL}/datasheets/admin/${id}/download-pdf/`
+}
+
+export async function downloadDatasheetPdf(id: number, filename: string): Promise<void> {
+  const token = getAdminToken()
+  const res = await fetch(getDatasheetPdfDownloadUrl(id), {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  })
+  if (!res.ok) throw new Error('PDF download failed')
+  const blob = await res.blob()
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(url)
 }
 
 // ─── Inquiries ────────────────────────────────────────────────────────────

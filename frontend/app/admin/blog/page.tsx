@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Plus, Search, Edit, Trash2, Eye, EyeOff, FileText, Star } from 'lucide-react'
+import { Plus, Search, Edit, Trash2, Eye, EyeOff, FileText, Star, Sparkles } from 'lucide-react'
 import StatusBadge from '@/components/admin/ui/StatusBadge'
 import ConfirmModal from '@/components/admin/ui/ConfirmModal'
 import Pagination from '@/components/admin/ui/Pagination'
@@ -63,9 +63,14 @@ export default function AdminBlogPage() {
           <h1 className="text-2xl font-extrabold text-gray-900 dark:text-white">Blog Posts</h1>
           <p className="text-sm text-gray-500 mt-0.5">{filtered.length} post{filtered.length !== 1 ? 's' : ''}</p>
         </div>
-        <Link href="/admin/blog/new" className="flex items-center gap-2 bg-[#0C094D] hover:bg-[#1a1760] text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors">
-          <Plus size={16} /> New Post
-        </Link>
+        <div className="flex gap-2">
+          <Link href="/admin/blog/generate" className="flex items-center gap-2 bg-[#F26C0C] hover:bg-[#d45d0a] text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors">
+            <Sparkles size={15} /> Generate with AI
+          </Link>
+          <Link href="/admin/blog/new" className="flex items-center gap-2 bg-[#0C094D] hover:bg-[#1a1760] text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors">
+            <Plus size={16} /> New Post
+          </Link>
+        </div>
       </div>
 
       {/* Filters */}

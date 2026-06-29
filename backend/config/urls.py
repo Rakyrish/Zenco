@@ -7,6 +7,7 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from django.http import JsonResponse
+from apps.blog.urls import datasheet_urlpatterns
 
 
 def health_check(request):
@@ -26,6 +27,8 @@ urlpatterns = [
     path('api/industries/', include('apps.industries.urls')),
     path('api/inquiries/', include('apps.inquiries.urls')),
     path('api/blog/', include('apps.blog.urls')),
+    path('api/technical-docs/', include('apps.blog.urls')),  # Clean alias for tech docs
+    path('api/datasheets/', include(datasheet_urlpatterns)),
     path('api/testimonials/', include('apps.testimonials.urls')),
     path('api/partners/', include('apps.partners.urls')),
     path('api/accounts/', include('apps.accounts.urls')),

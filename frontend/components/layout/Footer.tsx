@@ -184,6 +184,7 @@ export default function Footer() {
                 { label: 'Our Services', href: '/services' },
                 { label: 'Industries Served', href: '/industries' },
                 { label: 'Blog & Insights', href: '/blog' },
+                { label: 'Technical Docs', href: '/technical-docs' },
                 { label: 'FAQs', href: '/faqs' },
                 { label: 'Contact Us', href: '/contact' },
                 { label: 'Request a Quote', href: '/contact?type=quote' },

@@ -578,3 +578,51 @@
     box-shadow: var(--shadow-card-hover);
   }
 }
+
+/* ─── Datasheet Print Styles ─────────────────────────────────────────────── */
+@media print {
+  /* Hide all chrome except the document paper */
+  header, footer, nav,
+  .print\:hidden,
+  [class*="print:hidden"] {
+    display: none !important;
+  }
+
+  body {
+    background: #fff !important;
+    color: #111 !important;
+    font-size: 10pt;
+    line-height: 1.45;
+  }
+
+  /* Give the paper a clean white background, no shadow */
+  .datasheet-viewer {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Page break rules */
+  section {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  h1, h2, h3 {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
+  table { break-inside: auto; }
+  tr    { break-inside: avoid; page-break-inside: avoid; }
+
+  /* Ensure links print as text */
+  a[href]::after {
+    content: none !important;
+  }
+
+  /* Print page margins */
+  @page {
+    size: A4;
+    margin: 1.5cm;
+  }
+}

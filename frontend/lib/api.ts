@@ -212,3 +212,131 @@ export async function getAllBlogPosts(): Promise<BlogPost[]> {
   }
   return all
 }
+
+// ─── Technical Documents ──────────────────────────────────────────────────
+
+export async function getTechnicalDocuments(params?: {
+  doc_type?: string
+  search?: string
+  page?: number
+}): Promise<{ count: number; next: string | null; previous: string | null; results: TechDoc[] }> {
+  const query = new URLSearchParams()
+  if (params?.doc_type) query.set('doc_type', params.doc_type)
+  if (params?.search)   query.set('search', params.search)
+  if (params?.page)     query.set('page', String(params.page))
+  return fetchAPI(`/blog/technical-docs/?${query}`, {}, 'force-cache', 3600)
+}
+
+export async function getTechnicalDocumentBySlug(slug: string): Promise<TechDocDetail> {
+  return fetchAPI<TechDocDetail>(`/blog/technical-docs/${slug}/`, {}, 'force-cache', 3600)
+}
+
+export async function getAllTechnicalDocuments(): Promise<TechDoc[]> {
+  const all: TechDoc[] = []
+  let page = 1
+  let hasMore = true
+  while (hasMore) {
+    try {
+      const data = await getTechnicalDocuments({ page })
+      all.push(...data.results)
+      hasMore = Boolean(data.next)
+      page++
+    } catch {
+      hasMore = false
+    }
+  }
+  return all
+}
+
+// Inline local types (avoids needing to update global types.ts for public pages)
+export type TechDoc = {
+  id: string
+  title: string
+  slug: string
+  doc_type: string
+  doc_type_display: string
+  standard_code: string
+  excerpt: string
+  is_published: boolean
+  created_at: string
+  updated_at: string
+  view_count: number
+}
+
+export type TechDocDetail = TechDoc & {
+  body_html: string
+  pdf_file?: string | null
+  meta_title: string
+  meta_description: string
+}
+
+// ─── Product Data Sheets (AI TDS) ─────────────────────────────────────────
+
+export type ProductDataSheetDetail = {
+  id: number
+  title: string
+  slug: string
+  version: string
+  issue_date: string
+  revision_date: string
+  meta_title: string
+  meta_description: string
+  product_description: string
+  chemical_composition: { component: string; cas_number: string; percentage: string }[]
+  physical_properties: Record<string, string>
+  performance_data: Record<string, unknown>
+  applications: string[]
+  industries_served: string[]
+  health_safety: Record<string, unknown>
+  storage_handling: Record<string, unknown>
+  packaging_info: Record<string, unknown>
+  standards_compliance: { standard: string; scope: string }[]
+  certifications: string[]
+  faq: { question: string; answer: string }[]
+  related_products_text: string
+  product: {
+    id: string
+    name: string
+    slug: string
+    sku: string
+    short_description: string
+    image: string | null
+    category_name: string
+    category_slug: string
+  }
+  related_products: ProductListItem[]
+  related_blogs: { title: string; slug: string; excerpt: string }[]
+  related_docs: { title: string; slug: string; doc_type: string; excerpt: string }[]
+  view_count: number
+  updated_at: string
+}
+
+export type ProductDataSheetSitemapEntry = {
+  product_slug: string
+  updated_at: string
+}
+
+export async function getProductDataSheet(productSlug: string): Promise<ProductDataSheetDetail> {
+  return fetchAPI<ProductDataSheetDetail>(`/datasheets/${productSlug}/`, {}, 'force-cache', 7200)
+}
+
+export async function trackDatasheetView(productSlug: string): Promise<void> {
+  const BASE_URL = getBaseUrl()
+  await fetch(`${BASE_URL}/datasheets/${productSlug}/view/`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+      ...getExtraHeaders(),
+    },
+  })
+}
+
+export async function getAllPublishedDatasheets(): Promise<ProductDataSheetSitemapEntry[]> {
+  try {
+    return await fetchAPI<ProductDataSheetSitemapEntry[]>('/datasheets/sitemap/', {}, 'force-cache', 3600)
+  } catch {
+    return []
+  }
+}
+

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Download, Mail, MessageCircle, Phone, Send, ShieldCheck } from 'lucide-react'
+import { Mail, MessageCircle, Phone, Send, ShieldCheck, FileText } from 'lucide-react'
 import type { ProductDetail } from '@/types'
 import { AVAILABILITY_LABELS, SITE_CONFIG } from '@/lib/constants'
 import ProductCard from './ProductCard'
@@ -152,7 +152,11 @@ export default function ProductDetailExperience({ product }: { product: ProductD
               <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold text-zinc-600">
                 {SITE_CONFIG.phone && <a href={`tel:${SITE_CONFIG.phone}`} className="inline-flex items-center gap-1 rounded border border-zinc-200 bg-white px-3 py-2"><Phone size={14} /> {SITE_CONFIG.phone}</a>}
                 {SITE_CONFIG.email && <a href={`mailto:${SITE_CONFIG.email}`} className="inline-flex items-center gap-1 rounded border border-zinc-200 bg-white px-3 py-2"><Mail size={14} /> Email Sales</a>}
-                {product.datasheet && <a href={product.datasheet} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 rounded border border-zinc-200 bg-white px-3 py-2"><Download size={14} /> Datasheet</a>}
+                {product.product_data_sheet?.status === 'published' && (
+                  <Link href={`/products/${product.slug}/datasheet`} className="inline-flex items-center gap-1 rounded border border-primary/30 bg-primary/5 px-3 py-2 text-primary hover:bg-primary hover:text-white">
+                    <FileText size={14} /> View Technical Data Sheet
+                  </Link>
+                )}
               </div>
             </div>
           </div>

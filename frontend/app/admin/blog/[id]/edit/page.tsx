@@ -55,7 +55,7 @@ export default function EditBlogPostPage() {
           seo_title: post.seo_title || post.title,
           seo_description: post.seo_description || post.excerpt,
         })
-        setTags(post.tags)
+        setTags((post.tags || []).map(t => typeof t === 'string' ? t : (t as any).name))
       } catch (err) {
         console.error('Failed to load blog post', err)
         router.push('/admin/blog')

@@ -17,6 +17,7 @@ export interface Category {
 
 export interface ProductListItem {
   id: string
+  sku?: string
   name: string
   slug: string
   short_description: string
@@ -28,6 +29,12 @@ export interface ProductListItem {
   stock_quantity?: number
   is_featured: boolean
   regions_available: string[]
+  product_data_sheet?: {
+    slug: string
+    status: 'draft' | 'published' | 'archived'
+    version: string
+    title: string
+  } | null
   created_at: string
   updated_at: string
 }
@@ -39,6 +46,12 @@ export interface ProductDetail extends Omit<ProductListItem, 'category'> {
   applications: string[]
   gallery: string[]
   datasheet: string | null
+  product_data_sheet?: {
+    slug: string
+    status: 'draft' | 'published' | 'archived'
+    version: string
+    title: string
+  } | null
   packaging?: string
   seo_title: string
   seo_description: string

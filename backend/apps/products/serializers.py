@@ -32,6 +32,7 @@ class ProductListSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source='category.name', read_only=True)
     category_slug = serializers.CharField(source='category.slug', read_only=True)
     image = serializers.SerializerMethodField()
+    product_data_sheet = serializers.SerializerMethodField()
 
     def get_image(self, obj):
         cloudinary_url = (obj.schema_data or {}).get('cloudinary_image_url')
@@ -42,20 +43,43 @@ class ProductListSerializer(serializers.ModelSerializer):
             return request.build_absolute_uri(obj.image.url) if request else obj.image.url
         return None
 
+    def get_product_data_sheet(self, obj):
+        sheet = getattr(obj, 'product_data_sheet', None)
+        if not sheet or sheet.status != 'published' or not sheet.is_public:
+            return None
+        return {
+            'slug': sheet.slug,
+            'status': sheet.status,
+            'version': sheet.version,
+            'title': sheet.title,
+        }
+
     class Meta:
         model = Product
         fields = [
             'id', 'name', 'slug', 'short_description', 'category',
             'category_name', 'category_slug', 'image', 'availability',
             'stock_quantity', 'is_featured', 'regions_available',
-            'created_at', 'updated_at',
+            'product_data_sheet', 'created_at', 'updated_at',
         ]
 
 
 class ProductDetailSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
     related_products = ProductListSerializer(many=True, read_only=True)
+    product_data_sheet = serializers.SerializerMethodField()
     image = serializers.SerializerMethodField()
+
+    def get_product_data_sheet(self, obj):
+        sheet = getattr(obj, 'product_data_sheet', None)
+        if not sheet or sheet.status != 'published' or not sheet.is_public:
+            return None
+        return {
+            'slug': sheet.slug,
+            'status': sheet.status,
+            'version': sheet.version,
+            'title': sheet.title,
+        }
 
     def get_image(self, obj):
         cloudinary_url = (obj.schema_data or {}).get('cloudinary_image_url')
@@ -73,7 +97,8 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             'category', 'specifications', 'applications', 'image',
             'gallery', 'datasheet', 'packaging', 'availability', 'is_featured',
             'stock_quantity', 'regions_available', 'seo_title', 'seo_description',
-            'schema_data', 'related_products', 'created_at', 'updated_at',
+            'schema_data', 'related_products', 'product_data_sheet',
+            'created_at', 'updated_at',
         ]
 
 

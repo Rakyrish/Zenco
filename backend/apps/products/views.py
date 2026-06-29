@@ -42,7 +42,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
                 'products',
                 filter=Q(products__is_active=True, products__is_deleted=False)
             )
-        ).prefetch_related(product_prefetch)
+        ).prefetch_related(product_prefetch).order_by('name')
 
     def get_permissions(self):
         if self.action in ['list', 'retrieve']:
@@ -73,9 +73,10 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
     ordering = ['sort_order', 'name']
 
     def get_queryset(self):
-        return Product.objects.filter(
+        qs = Product.objects.filter(
             is_active=True
-        ).select_related('category').order_by('sort_order', 'name')
+        ).select_related('category', 'product_data_sheet').order_by('sort_order', 'name')
+        return qs
 
     def get_serializer_class(self):
         if self.action == 'retrieve':

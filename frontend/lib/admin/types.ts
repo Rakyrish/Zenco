@@ -71,6 +71,7 @@ export interface AdminProductCategory {
 
 export interface AdminProduct {
   id: string
+  sku?: string
   name: string
   slug: string
   short_description: string
@@ -122,13 +123,19 @@ export interface ProductFormData {
 
 // ── Blog ──────────────────────────────────────────────────────────────────
 
-export type BlogStatus = 'published' | 'draft' | 'scheduled'
+export type BlogStatus = 'published' | 'draft' | 'scheduled' | 'archived'
 
 export interface AdminBlogCategory {
   id: number
   name: string
   slug: string
   color: string
+}
+
+export interface AdminBlogTag {
+  id: number
+  name: string
+  slug: string
 }
 
 export interface AdminBlogPost {
@@ -138,9 +145,11 @@ export interface AdminBlogPost {
   excerpt: string
   content: string
   category: AdminBlogCategory | null
+  categories: AdminBlogCategory[]
+  tags: AdminBlogTag[]
   featured_image: string | null
+  featured_image_alt?: string
   og_image?: string | null
-  tags: string[]
   reading_time: number
   is_featured: boolean
   status: BlogStatus
@@ -148,10 +157,13 @@ export interface AdminBlogPost {
   author_id: string
   published_at: string | null
   scheduled_at?: string | null
+  meta_title: string
+  meta_description: string
   seo_title: string
   seo_description: string
   canonical_url?: string
   views_count: number
+  quality_score: number
   created_at: string
   updated_at: string
 }
@@ -161,13 +173,139 @@ export interface BlogFormData {
   slug: string
   excerpt: string
   content: string
-  category?: string
-  tags: string[]
+  category?: string | null
+  categories_ids?: number[]
+  tag_ids?: number[]
+  tags?: string[]
+  featured_image_alt?: string
   is_featured: boolean
   status: BlogStatus
   published_at?: string | null
-  seo_title: string
-  seo_description: string
+  scheduled_at?: string | null
+  meta_title?: string
+  meta_description?: string
+  seo_title?: string
+  seo_description?: string
+}
+
+// ── Technical Documents ───────────────────────────────────────────────────
+
+export type TechDocType = 'datasheet' | 'iso_guide' | 'kebs_guide' | 'iec_guide' | 'case_study' | 'whitepaper'
+
+export interface TechnicalDocument {
+  id: string
+  title: string
+  slug: string
+  doc_type: TechDocType
+  doc_type_display: string
+  standard_code: string
+  excerpt: string
+  body_html?: string
+  pdf_file?: string | null
+  meta_title: string
+  meta_description: string
+  is_published: boolean
+  created_at: string
+  updated_at: string
+  view_count: number
+}
+
+// ── Blog Generation Logs ──────────────────────────────────────────────────
+
+export type BlogGenStatus = 'success' | 'failed'
+
+export interface BlogGenerationLog {
+  id: number
+  blog: string | null
+  blog_title: string | null
+  triggered_by: string
+  topic_used: string
+  tokens_used: number
+  quality_score: number
+  retries: number
+  status: BlogGenStatus
+  created_at: string
+  error_log: string
+}
+
+// ── AI Generation ─────────────────────────────────────────────────────────
+
+export interface AIBlogGenerationResult {
+  status: 'success' | 'failed' | 'queued'
+  post?: AdminBlogPost
+  task_id?: string
+  error?: string
+  message?: string
+}
+
+// ── Product Data Sheets (AI TDS) ──────────────────────────────────────────
+
+export type DatasheetStatus = 'draft' | 'published' | 'archived'
+
+export interface ProductDataSheet {
+  id: number
+  title: string
+  slug: string
+  version: string
+  status: DatasheetStatus
+  is_public: boolean
+  product_id: string
+  product_name: string
+  product_slug: string
+  product_description?: string
+  meta_title?: string
+  meta_description?: string
+  chemical_composition?: { component: string; cas_number: string; percentage: string }[]
+  physical_properties?: Record<string, string>
+  performance_data?: Record<string, unknown>
+  applications?: string[]
+  industries_served?: string[]
+  health_safety?: Record<string, unknown>
+  storage_handling?: Record<string, unknown>
+  packaging_info?: Record<string, unknown>
+  standards_compliance?: { standard: string; scope: string }[]
+  certifications?: string[]
+  faq?: { question: string; answer: string }[]
+  related_products_text?: string
+  ai_generated: boolean
+  tokens_used: number
+  validation_flags: string[]
+  view_count: number
+  issue_date?: string
+  revision_date?: string
+  created_at: string
+  updated_at: string
+  category_name?: string
+  product_sku?: string
+}
+
+export interface DatasheetOverview {
+  total_products: number
+  datasheets_generated: number
+  datasheets_published: number
+  products_without_datasheet: number
+  total_datasheet_views: number
+  total_tokens_used: number
+  estimated_tokens_per_datasheet: number
+  top_viewed: ProductDataSheet[]
+  products_without: { id: string; name: string; slug: string; sku: string }[]
+}
+
+export interface AIDatasheetGenerationResult {
+  status: 'success' | 'failed' | 'queued'
+  datasheet?: ProductDataSheet
+  task_id?: string
+  error?: string
+}
+
+export interface BulkDatasheetTaskStatus {
+  task_id: string
+  state: string
+  current?: number
+  total?: number
+  product_name?: string
+  result?: { success: number; total: number; failed: { product: string; error: string }[] }
+  error?: string
 }
 
 // ── Inquiries ─────────────────────────────────────────────────────────────

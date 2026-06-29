@@ -7,7 +7,7 @@ import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, Package, FileText, MessageSquare, ShoppingCart,
   Bot, BarChart3, Warehouse, Search, Settings, Users, ChevronLeft,
-  ChevronRight, X, Zap, Activity,
+  ChevronRight, X, Zap, Activity, BookOpen, Sparkles,
 } from 'lucide-react'
 
 interface NavGroup {
@@ -34,6 +34,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { label: 'Products', href: '/admin/products', icon: <Package size={18} /> },
       { label: 'Blog Posts', href: '/admin/blog', icon: <FileText size={18} /> },
+      { label: 'Technical Docs', href: '/admin/technical-docs', icon: <BookOpen size={18} /> },
     ],
   },
   {
@@ -172,13 +173,20 @@ export default function AdminSidebar({ mobileOpen, onMobileClose }: AdminSidebar
 
         {/* Quick Actions */}
         {!collapsed && (
-          <div className="px-3 py-3 border-t border-white/10">
+          <div className="px-3 py-3 border-t border-white/10 space-y-1.5">
             <Link
               href="/admin/products/new"
               className="flex items-center gap-2 w-full bg-[#F26C0C]/15 hover:bg-[#F26C0C]/25 border border-[#F26C0C]/30 text-[#F26C0C] text-xs font-semibold px-3 py-2 rounded-lg transition-colors"
             >
               <Zap size={13} />
               Quick Add Product
+            </Link>
+            <Link
+              href="/admin/blog/generate"
+              className="flex items-center gap-2 w-full bg-white/5 hover:bg-white/10 border border-white/10 text-white/60 hover:text-white text-xs font-semibold px-3 py-2 rounded-lg transition-colors"
+            >
+              <Sparkles size={13} />
+              Generate Blog with AI
             </Link>
           </div>
         )}

@@ -206,6 +206,24 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'Africa/Nairobi'
 
+from celery.schedules import crontab
+
+# ─── Celery Beat — Automated Blog Generation ──────────────────────────────────
+CELERY_BEAT_SCHEDULE = {
+    # Monday 9:00 AM EAT (06:00 UTC) — water treatment / process topics
+    "generate-monday-blog": {
+        "task": "blog.generate_monday_blog",
+        "schedule": crontab(minute=0, hour=6, day_of_week=1),
+        "options": {"queue": "blog_generation"},
+    },
+    # Thursday 9:00 AM EAT (06:00 UTC) — compliance / safety topics
+    "generate-thursday-blog": {
+        "task": "blog.generate_thursday_blog",
+        "schedule": crontab(minute=0, hour=6, day_of_week=4),
+        "options": {"queue": "blog_generation"},
+    },
+}
+
 # ─── Email (Resend) ──────────────────────────────────────────────────────────
 # Support both RESEND_API_KEY (standard) and RESEND_MAIL (legacy key name)
 RESEND_API_KEY = config('RESEND_API_KEY', default='') or config('RESEND_MAIL', default='')

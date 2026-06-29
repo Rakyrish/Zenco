@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Eye, MessageCircle } from 'lucide-react'
+import { Eye, MessageCircle, FileText } from 'lucide-react'
 import type { ProductListItem } from '@/types'
 import { AVAILABILITY_LABELS } from '@/lib/constants'
 import ProductImageFrame from './ProductImageFrame'
@@ -12,6 +12,7 @@ export default function ProductCard({ product, priority = false }: { product: Pr
   const unavailable = isOutOfStock(product)
   const statusLabel = unavailable ? AVAILABILITY_LABELS.out_of_stock : label
   const forceWhiteStatus = unavailable || product.availability === 'in_stock'
+  const hasDatasheet = product.product_data_sheet?.status === 'published'
 
   return (
     <article className="group flex h-full min-h-[255px] flex-col overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-sm transition duration-300 hover:-translate-y-0.5 hover:border-accent/40 hover:shadow-xl sm:min-h-[340px] md:min-h-[390px]">
@@ -25,6 +26,11 @@ export default function ProductCard({ product, priority = false }: { product: Pr
           >
             {product.category_name}
           </Link>
+          {hasDatasheet && (
+            <span className="flex-shrink-0 rounded bg-primary/10 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider text-primary sm:text-[10px]">
+              TDS
+            </span>
+          )}
         </div>
 
         <h3 className="line-clamp-2 min-h-[2.25rem] break-words text-sm font-extrabold leading-snug text-primary transition group-hover:text-accent sm:min-h-[2.65rem] sm:text-base md:min-h-[3rem]">
@@ -42,27 +48,44 @@ export default function ProductCard({ product, priority = false }: { product: Pr
           {product.short_description}
         </p>
 
-        <div className="mt-auto grid grid-cols-2 gap-1.5 pt-3 sm:gap-2 sm:pt-5">
-          <a
-            href={whatsappHref(product, 'catalog product card inquiry')}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-green-600 px-2 text-xs font-bold text-white transition hover:bg-green-700 sm:h-10 sm:px-3"
-            aria-label={`Ask about ${product.name} on WhatsApp`}
-            title="WhatsApp"
-          >
-            <MessageCircle size={15} />
-            <span className="hidden sm:inline">WhatsApp</span>
-          </a>
-          <Link
-            href={`/products/${product.slug}`}
-            className="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-primary px-2 text-xs font-bold text-white transition hover:bg-primary-600 sm:h-10 sm:px-3"
-            aria-label={`View ${product.name}`}
-            title="View Product"
-          >
-            <Eye size={15} />
-            <span className="hidden sm:inline whitespace-nowrap">Views Product</span>
-          </Link>
+        {/* Action buttons */}
+        <div className="mt-auto pt-3 sm:pt-4">
+          {/* Primary actions */}
+          <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
+            <a
+              href={whatsappHref(product, 'catalog product card inquiry')}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-green-600 px-2 text-xs font-bold text-white transition hover:bg-green-700 sm:h-10 sm:px-3"
+              aria-label={`Ask about ${product.name} on WhatsApp`}
+              title="WhatsApp"
+            >
+              <MessageCircle size={15} />
+              <span className="hidden sm:inline">WhatsApp</span>
+            </a>
+            <Link
+              href={`/products/${product.slug}`}
+              className="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-primary px-2 text-xs font-bold text-white transition hover:bg-primary-600 sm:h-10 sm:px-3"
+              aria-label={`View ${product.name}`}
+              title="View Product"
+            >
+              <Eye size={15} />
+              <span className="hidden sm:inline whitespace-nowrap">View Product</span>
+            </Link>
+          </div>
+
+          {/* Datasheet button — only shown when a published TDS exists */}
+          {hasDatasheet && (
+            <Link
+              href={`/products/${product.slug}/datasheet`}
+              className="mt-1.5 inline-flex h-8 w-full items-center justify-center gap-1.5 rounded-md border border-primary/20 bg-primary/5 px-3 text-xs font-bold text-primary transition hover:bg-primary hover:text-white sm:mt-2"
+              aria-label={`View Technical Data Sheet for ${product.name}`}
+              title="View Technical Data Sheet"
+            >
+              <FileText size={13} />
+              View Technical Data Sheet
+            </Link>
+          )}
         </div>
       </div>
     </article>
