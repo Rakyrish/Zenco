@@ -11,7 +11,7 @@ class CategorySerializer(serializers.ModelSerializer):
         fields = [
             'id', 'name', 'slug', 'description', 'icon',
             'image', 'sort_order', 'seo_title', 'seo_description',
-            'product_count', 'is_active', 'products',
+            'content_sections', 'product_count', 'is_active', 'products',
         ]
 
     def get_product_count(self, obj):

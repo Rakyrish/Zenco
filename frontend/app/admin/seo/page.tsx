@@ -1,14 +1,14 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Globe, Save, HelpCircle, Plus, X } from 'lucide-react'
+import { Globe, Save, HelpCircle, Layers, Loader2, Plus, Sparkles, X } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { useToast } from '@/lib/admin/hooks'
-import { auditSeo, getSeoPages, updateSeoPage } from '@/lib/admin/api'
+import { auditSeo, generateCategoryContent, getAdminCategories, getSeoPages, updateSeoPage } from '@/lib/admin/api'
 import { SITE_CONFIG } from '@/lib/constants'
-import type { SeoPageMeta } from '@/lib/admin/types'
+import type { AdminProductCategory, SeoPageMeta } from '@/lib/admin/types'
 
 const seoSchema = z.object({
   site_title: z.string().min(5, 'Required'),
@@ -23,12 +23,14 @@ const seoSchema = z.object({
 type SEOData = z.infer<typeof seoSchema>
 
 export default function AdminSEOPage() {
-  const { success } = useToast()
+  const { success, error: toastError } = useToast()
   const [saving, setSaving] = useState(false)
   const [keywordChips, setKeywordChips] = useState<string[]>([])
   const [keywordInput, setKeywordInput] = useState('')
   const [pages, setPages] = useState<SeoPageMeta[]>([])
   const [recommendations, setRecommendations] = useState('')
+  const [categories, setCategories] = useState<AdminProductCategory[]>([])
+  const [generatingCategory, setGeneratingCategory] = useState<string | null>(null)
 
   const { register, handleSubmit, formState: { errors } } = useForm<SEOData>({
     resolver: zodResolver(seoSchema),
@@ -43,7 +45,21 @@ export default function AdminSEOPage() {
 
   useEffect(() => {
     getSeoPages().then(setPages).catch(() => setPages([]))
+    getAdminCategories().then(setCategories).catch(() => setCategories([]))
   }, [])
+
+  const handleGenerateCategory = async (category: AdminProductCategory) => {
+    setGeneratingCategory(category.slug)
+    try {
+      const updated = await generateCategoryContent(category.slug)
+      setCategories(prev => prev.map(c => c.id === updated.id ? updated : c))
+      success('Category content generated', `"${category.name}" now has a long-form authority page (intro, industry applications, buying guide, FAQs).`)
+    } catch (err) {
+      toastError('Generation failed', err instanceof Error ? err.message : 'Could not generate category content.')
+    } finally {
+      setGeneratingCategory(null)
+    }
+  }
 
   const addKeyword = () => {
     const kw = keywordInput.trim().toLowerCase()
@@ -197,6 +213,46 @@ export default function AdminSEOPage() {
         </div>
 
       </form>
+
+      {/* Category Authority Pages */}
+      <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 p-6 shadow-sm space-y-4">
+        <div>
+          <h2 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            <Layers size={15} className="text-[#F26C0C]" /> Category Authority Pages
+          </h2>
+          <p className="text-xs text-gray-500 mt-1">
+            Generate 1,500-3,000 word authority content per category: long-form introduction, industry applications, buying guide, and FAQs. Category URLs never change.
+          </p>
+        </div>
+        <div className="space-y-3">
+          {categories.map(category => {
+            const hasContent = !!(category.content_sections && Object.keys(category.content_sections).length)
+            return (
+              <div key={category.id} className="border border-gray-100 dark:border-gray-800 rounded-xl p-4 flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{category.name}</p>
+                  <p className="text-xs text-gray-500">/products/category/{category.slug} · {category.product_count} products</p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className={`text-[10px] font-bold px-2 py-1 rounded-lg ${hasContent ? 'bg-green-50 text-green-700' : 'bg-amber-50 text-amber-700'}`}>
+                    {hasContent ? 'AUTHORITY CONTENT' : 'BASIC'}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => handleGenerateCategory(category)}
+                    disabled={!!generatingCategory}
+                    className="flex items-center gap-1.5 text-xs font-bold text-[#F26C0C] border border-[#F26C0C]/40 hover:bg-[#F26C0C]/10 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-40"
+                  >
+                    {generatingCategory === category.slug ? <Loader2 size={13} className="animate-spin" /> : <Sparkles size={13} />}
+                    {hasContent ? 'Regenerate' : 'Generate'}
+                  </button>
+                </div>
+              </div>
+            )
+          })}
+          {!categories.length && <p className="text-xs text-gray-500">No categories found.</p>}
+        </div>
+      </div>
 
       <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 p-6 shadow-sm space-y-4">
         <h2 className="text-sm font-bold text-gray-900 dark:text-white">Indexed SEO Pages</h2>

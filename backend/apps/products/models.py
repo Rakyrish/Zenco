@@ -20,6 +20,8 @@ class Category(models.Model):
     sort_order = models.PositiveIntegerField(default=0)
     seo_title = models.CharField(max_length=70, blank=True)
     seo_description = models.CharField(max_length=160, blank=True)
+    content_sections = models.JSONField(default=dict, blank=True,
+        help_text='AI-generated authority page content: introduction, industry_applications, buying_guide, selection_criteria, faq_section')
     is_active = models.BooleanField(default=True)
     is_deleted = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)

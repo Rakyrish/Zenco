@@ -6,7 +6,7 @@ import type {
   BlogFormData, AdminInquiry, AdminQuote, ChatbotConversation,
   InventoryItem, Supplier, AnalyticsOverview, TopContent, ConversionStats,
   SeoPageMeta, SiteSetting, DashboardStats, AdminUser, AuthTokens,
-  AdminProductCategory, AdminBlogCategory, AdminBlogTag, MonitoringOverview, InquiryStats,
+  AdminProductCategory, AdminBlogCategory, AdminBlogTag, MonitoringOverview, InquiryStats, BulkRegenerateStatus,
   TechnicalDocument, BlogGenerationLog, AIBlogGenerationResult,
   ProductDataSheet, DatasheetOverview, AIDatasheetGenerationResult, BulkDatasheetTaskStatus,
 } from './types'
@@ -130,6 +130,29 @@ export async function importProductImage(productId: string, imageUrl: string): P
     method: 'POST',
     body: JSON.stringify({ image_url: imageUrl }),
   })
+}
+
+// ─── Product Content Regeneration (URL-preserving) ───────────────────────
+export async function regenerateProductContent(id: string, context?: string): Promise<AdminProduct> {
+  return adminFetch<AdminProduct>(`/products/admin/${id}/regenerate-content/`, {
+    method: 'POST',
+    body: JSON.stringify(context ? { context } : {}),
+  })
+}
+
+export async function bulkRegenerateProducts(params: { product_ids?: string[]; all?: boolean }): Promise<{ status: string; task_id: string; total: number }> {
+  return adminFetch('/products/admin/bulk-regenerate/', {
+    method: 'POST',
+    body: JSON.stringify(params),
+  })
+}
+
+export async function getBulkRegenerateStatus(taskId: string): Promise<BulkRegenerateStatus> {
+  return adminFetch<BulkRegenerateStatus>(`/products/admin/bulk-regenerate-status/?task_id=${encodeURIComponent(taskId)}`)
+}
+
+export async function generateCategoryContent(slug: string): Promise<AdminProductCategory> {
+  return adminFetch<AdminProductCategory>(`/products/categories/${slug}/generate-content/`, { method: 'POST' })
 }
 
 export async function getAdminCategories(): Promise<AdminProductCategory[]> {

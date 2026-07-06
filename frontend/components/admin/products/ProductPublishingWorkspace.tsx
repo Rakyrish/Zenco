@@ -12,6 +12,7 @@ import {
   Save,
   Search,
   Sparkles,
+  Trash2,
   Upload,
   X,
 } from 'lucide-react'
@@ -21,6 +22,7 @@ import {
   generateProductContent,
   getAdminCategories,
   importProductImage,
+  regenerateProductContent,
   updateProduct,
   uploadProductImage,
 } from '@/lib/admin/api'
@@ -71,7 +73,7 @@ const emptyDraft: Draft = {
   status: 'published',
   specifications: {},
   applications: [],
-  regions_available: ['Kenya', 'East Africa'],
+  regions_available: ['Kenya', 'Uganda', 'Tanzania'],
   seo_title: '',
   seo_description: '',
   image_alt_text: '',
@@ -103,7 +105,7 @@ function splitLines(value: string) {
 }
 
 function categoryPresetDescription(name: string) {
-  return `${name} supplied by Zenco Chemicals Ltd for industrial, commercial, and institutional buyers across Kenya and East Africa.`
+  return `${name} supplied by Zenco Chemicals Ltd for industrial, commercial, and institutional buyers across Kenya, Uganda, and Tanzania.`
 }
 
 function calculateSeoScore(draft: Draft, meta: GeneratedMeta, hasImage: boolean) {
@@ -166,17 +168,16 @@ export default function ProductPublishingWorkspace({ product }: { product?: Admi
     getAdminCategories().then(setCategories).catch(() => setCategories([]))
   }, [])
 
-  useEffect(() => {
-    if (!product) return
-    const schema = product.schema_data || {}
+  const populateFromProduct = (source: AdminProduct) => {
+    const schema = source.schema_data || {}
     setDraft({
       ...emptyDraft,
-      ...product,
-      category: product.category || null,
+      ...source,
+      category: source.category || null,
       image_alt_text: String(schema.image_alt_text || ''),
       schema_data: schema,
     })
-    setPreview(product.image)
+    setPreview(source.image)
     setMeta({
       benefits: schema.benefits as string[] | undefined,
       features: schema.features as string[] | undefined,
@@ -185,7 +186,7 @@ export default function ProductPublishingWorkspace({ product }: { product?: Admi
       internal_linking_suggestions: schema.internal_linking_suggestions as string[] | undefined,
       seo_keywords: schema.seo_keywords as string[] | undefined,
       image_alt_text: String(schema.image_alt_text || ''),
-      opengraph_description: String(schema.opengraph_description || ''),
+      opengraph_description: String(schema.og_description || schema.opengraph_description || ''),
       product_tags: schema.product_tags as string[] | undefined,
       common_names_synonyms: schema.common_names_synonyms as string[] | undefined,
       focus_keyword: String(schema.focus_keyword || ''),
@@ -196,7 +197,30 @@ export default function ProductPublishingWorkspace({ product }: { product?: Admi
       purity: String(schema.purity || ''),
       grade: String(schema.grade || ''),
       industry_use: schema.industry_use as string[] | undefined,
+      technical_data_sheet: schema.technical_data_sheet as Record<string, string> | undefined,
     })
+  }
+
+  const regenerateExisting = async () => {
+    if (!product) return
+    if (!window.confirm(`Regenerate all content and SEO metadata for "${product.name}"? The URL slug, image, and category are preserved.`)) return
+    setGenerating(true)
+    setMessage('')
+    try {
+      const updated = await regenerateProductContent(product.id)
+      populateFromProduct(updated)
+      setMessage('Content regenerated with the comprehensive engine. URL, image, and category untouched — review and save.')
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : 'Regeneration failed.')
+    } finally {
+      setGenerating(false)
+    }
+  }
+
+  useEffect(() => {
+    if (!product) return
+    populateFromProduct(product)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [product])
 
   useEffect(() => {
@@ -229,42 +253,55 @@ export default function ProductPublishingWorkspace({ product }: { product?: Admi
       slug,
       description: categoryPresetDescription(name),
       seo_title: `${name} Supplier Kenya`,
-      seo_description: `${name} supplied by Zenco Chemicals Ltd across Kenya and East Africa.`,
+      seo_description: `${name} supplied by Zenco Chemicals Ltd across Kenya, Uganda, and Tanzania.`,
     })
     setCategoryModal(true)
   }
 
   const applyGenerated = (generated: any) => {
-    // Handle both old and new API response formats
+    // Handles the comprehensive content-engine format (content_sections + seo
+    // object) and stays backwards compatible with the legacy flat format.
+    const sections = generated.content_sections || {}
+    const seo = generated.seo || {}
     const productName = cleanGeneratedProductName(generated.product_title || generated.product_name || generated.name || draft.name)
     const shortDesc = generated.short_product_description || generated.short_description || generated.product_summary || draft.short_description
-    const longDesc = generated.product_description || generated.long_description || generated.full_product_description || draft.description
-    const metaDesc = generated.meta_description || generated.seo_meta_description || draft.seo_description
+    const longDesc = [sections.introduction, sections.detailed_overview].filter(Boolean).join('\n\n')
+      || generated.product_description || generated.long_description || generated.full_product_description || draft.description
+    const metaDesc = seo.meta_description || generated.meta_description || generated.seo_meta_description || draft.seo_description
+    const seoTitle = seo.seo_title || generated.seo_title || productName
     const slug = generated.seo_slug || generated.url_slug || generated.slug || generated.slug_suggestions?.[0] || productName
-    
+
     // Extract product attributes if available
     const attrs = generated.product_attributes || {}
-    const applications = generated.product_attributes?.applications || generated.applications || draft.applications
-    const industryUse = generated.product_attributes?.industry_use || generated.industries_served || []
-    const packagingValue = generated.product_attributes?.packaging || generated.packaging || draft.packaging || 'Confirm packaging'
+    const applications = generated.applications
+      || (Array.isArray(sections.applications_detailed) ? sections.applications_detailed.map((a: any) => a?.title).filter(Boolean) : null)
+      || attrs.applications || draft.applications
+    const industryUse = generated.industries_served || attrs.industry_use || []
+    const packagingValue = attrs.packaging || generated.packaging || draft.packaging || 'Confirm packaging'
     const packaging = Array.isArray(packagingValue) ? packagingValue.join(', ') : (packagingValue || '')
     const synonyms = Array.isArray(generated.common_names_synonyms) ? generated.common_names_synonyms.map(String).filter(Boolean) : []
-    
+    const specTable = generated.technical_specifications || generated.technical_data_sheet || generated.tds || attrs.technical_data_sheet || {}
+    const benefitsList = Array.isArray(sections.benefits_detailed) && sections.benefits_detailed.length
+      ? sections.benefits_detailed.map((b: any) => b?.title).filter(Boolean)
+      : generated.benefits || []
+
     const nextMeta: GeneratedMeta = {
-      benefits: generated.benefits || [],
+      benefits: benefitsList,
       features: generated.features || [],
       faq_section: generated.faq_section || [],
       industries_served: industryUse,
       internal_linking_suggestions: generated.internal_linking_suggestions || [],
-      seo_keywords: Array.isArray(generated.seo_keywords) ? generated.seo_keywords : (generated.seo_keywords ? [generated.seo_keywords] : generated.focus_keyword ? [generated.focus_keyword] : []),
-      image_alt_text: cleanGeneratedProductName(generated.image_alt_text || ''),
-      opengraph_description: generated.opengraph_description || '',
+      seo_keywords: Array.isArray(seo.seo_keywords) && seo.seo_keywords.length
+        ? seo.seo_keywords
+        : Array.isArray(generated.seo_keywords) ? generated.seo_keywords : (generated.seo_keywords ? [generated.seo_keywords] : seo.focus_keyword ? [seo.focus_keyword] : []),
+      image_alt_text: cleanGeneratedProductName(seo.image_alt_text || generated.image_alt_text || ''),
+      opengraph_description: seo.og_description || generated.opengraph_description || '',
       schema_friendly_content: generated.schema_friendly_content || {},
       safety_considerations: generated.safety_considerations || [],
       category_suggestions: generated.category_suggestions || [],
       product_tags: generated.product_tags || [],
       common_names_synonyms: synonyms,
-      focus_keyword: generated.focus_keyword || '',
+      focus_keyword: seo.focus_keyword || generated.focus_keyword || '',
       chemical_name: attrs.chemical_name || '',
       cas_number: attrs.cas_number || '',
       formula: attrs.formula || '',
@@ -272,17 +309,18 @@ export default function ProductPublishingWorkspace({ product }: { product?: Admi
       purity: attrs.purity || '',
       grade: attrs.grade || '',
       industry_use: industryUse,
-      technical_data_sheet: generated.technical_data_sheet || generated.tds || attrs.technical_data_sheet || {},
+      technical_data_sheet: specTable,
     }
-    
+
     setMeta(nextMeta)
     setDraft(prev => ({
       ...prev,
       name: limit(productName, 255),
-      slug: slugify(cleanGeneratedProductName(slug)),
+      // Never overwrite an existing slug — URLs must not change on regeneration.
+      slug: prev.slug || slugify(cleanGeneratedProductName(slug)),
       short_description: limit(shortDesc, 300),
       description: longDesc,
-      seo_title: limit(cleanGeneratedProductName(generated.seo_title || productName), 70),
+      seo_title: limit(cleanGeneratedProductName(seoTitle), 70),
       seo_description: limit(metaDesc, 160),
       specifications: {
         ...(synonyms.length ? { 'Synonyms': synonyms.join(', ') } : {}),
@@ -292,15 +330,21 @@ export default function ProductPublishingWorkspace({ product }: { product?: Admi
         ...(attrs.appearance ? { 'Appearance': attrs.appearance } : {}),
         ...(attrs.purity ? { 'Purity': attrs.purity } : {}),
         ...(attrs.grade ? { 'Grade': attrs.grade } : {}),
+        ...Object.fromEntries(Object.entries(specTable).map(([k, v]) => [k, String(v ?? '')]).filter(([, v]) => v)),
         ...prev.specifications,
       },
       applications: Array.isArray(applications) ? applications : prev.applications,
       packaging,
-      image_alt_text: cleanGeneratedProductName(generated.image_alt_text || prev.image_alt_text),
+      image_alt_text: cleanGeneratedProductName(seo.image_alt_text || generated.image_alt_text || prev.image_alt_text),
       schema_data: {
         ...prev.schema_data,
         ...nextMeta,
-        focus_keyword: generated.focus_keyword || '',
+        ...(Object.keys(sections).length ? { content_sections: sections } : {}),
+        og_title: seo.og_title || '',
+        og_description: seo.og_description || '',
+        twitter_title: seo.twitter_title || '',
+        twitter_description: seo.twitter_description || '',
+        focus_keyword: seo.focus_keyword || generated.focus_keyword || '',
         product_tags: generated.product_tags || [],
         common_names_synonyms: synonyms,
         ai_generated_at: new Date().toISOString(),
@@ -318,7 +362,7 @@ export default function ProductPublishingWorkspace({ product }: { product?: Admi
     try {
       const result = await generateProductContent({ image: imageFile || undefined, image_url: imageFile ? undefined : imageUrl })
       applyGenerated(JSON.parse(result.content))
-      
+
       // Build success message with generated fields summary
       const generated = JSON.parse(result.content)
       const fields = [
@@ -331,7 +375,7 @@ export default function ProductPublishingWorkspace({ product }: { product?: Admi
         (generated.internal_linking_suggestions && generated.internal_linking_suggestions.length > 0) && `✓ Internal Links (${generated.internal_linking_suggestions.length})`,
         generated.product_attributes && '✓ Technical Attributes',
       ].filter(Boolean).join(' • ')
-      
+
       setMessage(`AI generated complete product profile. ${fields}. Review, refine, then publish.`)
     } catch (err) {
       setMessage(err instanceof Error ? err.message : 'Generation failed.')
@@ -403,6 +447,22 @@ export default function ProductPublishingWorkspace({ product }: { product?: Admi
     }
   }
 
+  const clearFormExceptSlug = () => {
+    if (!window.confirm('Are you sure you want to clear all product fields? The URL slug and product image will be preserved.')) {
+      return
+    }
+    setDraft(prev => ({
+      ...emptyDraft,
+      slug: prev.slug,
+      image_alt_text: prev.image_alt_text,
+    }))
+    setMeta(prev => ({
+      image_alt_text: prev.image_alt_text,
+    }))
+    // We preserve imageFile, imageUrl, preview, and urlState
+    setMessage('Product fields cleared. Slug and image have been preserved.')
+  }
+
   const input = 'w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-950 placeholder:text-gray-500 focus:border-[#0C094D] focus:outline-none focus:ring-2 focus:ring-[#0C094D]/15 dark:border-gray-700 dark:bg-gray-900 dark:text-white dark:placeholder:text-gray-400 dark:focus:border-[#F26C0C]'
   const label = 'mb-1.5 block text-xs font-bold uppercase tracking-wide text-gray-700 dark:text-gray-300'
 
@@ -419,6 +479,26 @@ export default function ProductPublishingWorkspace({ product }: { product?: Admi
           </div>
         </div>
         <div className="flex gap-2">
+          {product && (
+            <button
+              type="button"
+              onClick={regenerateExisting}
+              disabled={generating || saving}
+              className="inline-flex items-center gap-2 rounded-lg bg-[#F26C0C] px-4 py-2 text-sm font-bold text-white hover:bg-orange-600 disabled:opacity-60"
+              title="Regenerate all content and SEO metadata with AI. URL slug, image, and category are preserved."
+            >
+              {generating ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />} Regenerate Content
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={clearFormExceptSlug}
+            disabled={saving}
+            className="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm font-bold text-red-600 hover:bg-red-100 disabled:opacity-60 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-400 dark:hover:bg-red-950/50"
+            title="Clears all fields except the URL slug and product image"
+          >
+            <Trash2 size={16} /> Clear Fields
+          </button>
           <button onClick={() => save('draft')} disabled={saving} className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-bold text-gray-800 hover:bg-gray-50 disabled:opacity-60 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100">
             <Save size={16} /> Draft
           </button>
@@ -589,11 +669,10 @@ export default function ProductPublishingWorkspace({ product }: { product?: Admi
                       key={cat.slug}
                       type="button"
                       onClick={() => chooseCategoryPreset(cat.name)}
-                      className={`rounded-md border px-2.5 py-1.5 text-[11px] font-bold transition ${
-                        active
-                          ? 'border-[#F26C0C] bg-[#F26C0C] text-white'
-                          : 'border-gray-200 bg-gray-50 text-gray-700 hover:border-[#F26C0C] hover:text-[#F26C0C] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200'
-                      }`}
+                      className={`rounded-md border px-2.5 py-1.5 text-[11px] font-bold transition ${active
+                        ? 'border-[#F26C0C] bg-[#F26C0C] text-white'
+                        : 'border-gray-200 bg-gray-50 text-gray-700 hover:border-[#F26C0C] hover:text-[#F26C0C] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200'
+                        }`}
                       title={existing ? 'Select existing category' : 'Create this category'}
                     >
                       {cat.name}
@@ -645,24 +724,24 @@ export default function ProductPublishingWorkspace({ product }: { product?: Admi
                   {(meta.internal_linking_suggestions || []).map((item, idx) => {
                     const isExternal = item.startsWith('http://') || item.startsWith('https://')
                     return (
-                    <div key={idx} className="flex items-center justify-between rounded-md bg-blue-50 px-2.5 py-1.5 dark:bg-blue-950/30">
-                      {isExternal ? (
-                        <a href={item} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-blue-700 hover:underline dark:text-blue-300">
-                          {item}
-                        </a>
-                      ) : (
-                        <a href={item} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-blue-700 hover:underline dark:text-blue-300">
-                          {item}
-                        </a>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => setMeta(prev => ({ ...prev, internal_linking_suggestions: (prev.internal_linking_suggestions || []).filter((_, i) => i !== idx) }))}
-                        className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-200"
-                      >
-                        <X size={14} />
-                      </button>
-                    </div>
+                      <div key={idx} className="flex items-center justify-between rounded-md bg-blue-50 px-2.5 py-1.5 dark:bg-blue-950/30">
+                        {isExternal ? (
+                          <a href={item} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-blue-700 hover:underline dark:text-blue-300">
+                            {item}
+                          </a>
+                        ) : (
+                          <a href={item} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-blue-700 hover:underline dark:text-blue-300">
+                            {item}
+                          </a>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => setMeta(prev => ({ ...prev, internal_linking_suggestions: (prev.internal_linking_suggestions || []).filter((_, i) => i !== idx) }))}
+                          className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-200"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
                     )
                   })}
                   {!(meta.internal_linking_suggestions || []).length && <p className="text-xs text-gray-500 dark:text-gray-400">No internal linking suggestions. Add them after generation.</p>}
@@ -710,7 +789,7 @@ export default function ProductPublishingWorkspace({ product }: { product?: Admi
                     slug: slugify(name),
                     description: categoryPresetDescription(name),
                     seo_title: `${name} Supplier Kenya`,
-                    seo_description: `${name} supplied by Zenco Chemicals Ltd across Kenya and East Africa.`,
+                    seo_description: `${name} supplied by Zenco Chemicals Ltd across Kenya, Uganda, and Tanzania.`,
                   })
                 }}
                 className={input}

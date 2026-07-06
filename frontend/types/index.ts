@@ -1,5 +1,37 @@
 // ─── Product Types ────────────────────────────────────────────────────────
 
+export interface TitledSection {
+  title: string
+  description?: string
+  paragraph?: string
+}
+
+export interface FaqItem {
+  question: string
+  answer: string
+}
+
+/** AI-generated authority-page sections stored in Product.schema_data.content_sections */
+export interface ProductContentSections {
+  introduction?: string
+  detailed_overview?: string
+  applications_detailed?: TitledSection[]
+  benefits_detailed?: TitledSection[]
+  packaging_information?: string
+  storage_handling?: string
+  safety_information?: string
+}
+
+/** AI-generated authority-page sections stored on Category.content_sections */
+export interface CategoryContentSections {
+  introduction?: string
+  industry_applications?: TitledSection[]
+  buying_guide?: string
+  selection_criteria?: TitledSection[]
+  faq_section?: FaqItem[]
+  seo_keywords?: string[]
+}
+
 export interface Category {
   id: string
   name: string
@@ -10,6 +42,7 @@ export interface Category {
   sort_order: number
   seo_title: string
   seo_description: string
+  content_sections?: CategoryContentSections
   product_count: number
   is_active: boolean
   products?: ProductListItem[]

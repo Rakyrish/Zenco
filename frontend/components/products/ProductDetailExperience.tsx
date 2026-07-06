@@ -7,6 +7,7 @@ import type { ProductDetail } from '@/types'
 import { AVAILABILITY_LABELS, SITE_CONFIG } from '@/lib/constants'
 import ProductCard from './ProductCard'
 import ProductGallery from './ProductGallery'
+import ProductContentSections, { contentSectionsFromSchema } from './ProductContentSections'
 import { isOutOfStock, whatsappHref } from './product-helpers'
 import { getProducts } from '@/lib/api'
 import { mapSuggestionToRoute } from '@/lib/seo-utils'
@@ -79,7 +80,9 @@ export default function ProductDetailExperience({ product }: { product: ProductD
     ].map(([key, value]) => [key, String(value || '').trim()]).filter(([, value]) => value),
   )
   const technicalDataSheet: Record<string, string> = Object.keys(explicitTds).length ? explicitTds : fallbackTds
-  const displayDescription = compactText(product.description || product.short_description)
+  const contentSections = contentSectionsFromSchema(product)
+  const heroIntro = String(contentSections?.introduction || '').split(/\n{2,}|\n/).map(part => part.trim()).find(Boolean)
+  const displayDescription = compactText(heroIntro || product.description || product.short_description)
   const whatsappProduct = {
     name: product.name,
     slug: product.slug,
@@ -177,6 +180,8 @@ export default function ProductDetailExperience({ product }: { product: ProductD
           ))}
         </section>
 
+        {contentSections && <ProductContentSections product={product} sections={contentSections} />}
+
         <section className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
           <div className="rounded-lg border border-zinc-200 bg-white p-6 shadow-sm">
             <h2 className="text-xl font-black text-primary">Technical Specifications</h2>
@@ -220,10 +225,12 @@ export default function ProductDetailExperience({ product }: { product: ProductD
         {(benefits.length || features.length || industries.length) && (
           <section className="grid gap-6 md:grid-cols-3">
             {[
-              ['Benefits', benefits],
+              // Paragraph-format benefits live in ProductContentSections; only
+              // show the legacy bullet column when that content doesn't exist.
+              ...(contentSections?.benefits_detailed?.length ? [] : [['Benefits', benefits] as const]),
               ['Product Features', features],
               ['Industries Served', industries],
-            ].map(([title, items]) => (
+            ].filter(([, items]) => (items as string[]).length).map(([title, items]) => (
               <div key={title as string} className="rounded-lg border border-zinc-200 bg-white p-6 shadow-sm">
                 <h2 className="text-lg font-black text-primary">{title as string}</h2>
                 <ul className="mt-4 space-y-2 text-sm leading-relaxed text-zinc-600">
@@ -257,7 +264,7 @@ export default function ProductDetailExperience({ product }: { product: ProductD
           )}
         </section>
 
-        {!!storageConditions && (
+        {!!storageConditions && !contentSections?.storage_handling && (
           <section className="rounded-lg border border-zinc-200 bg-white p-6 shadow-sm">
             <h2 className="text-xl font-black text-primary">Storage & Handling</h2>
             <p className="mt-4 text-sm leading-7 text-zinc-600">{storageConditions}</p>
@@ -266,9 +273,9 @@ export default function ProductDetailExperience({ product }: { product: ProductD
 
         {!!faqs.length && (
           <section className="rounded-lg border border-zinc-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-black text-primary">Product FAQ</h2>
+            <h2 className="text-xl font-black text-primary">Frequently Asked Questions About {product.name}</h2>
             <div className="mt-5 grid gap-4 md:grid-cols-2">
-              {faqs.slice(0, 6).map(faq => (
+              {faqs.slice(0, 10).map(faq => (
                 <details key={faq.question} className="rounded-md border border-zinc-200 p-4">
                   <summary className="cursor-pointer text-sm font-bold text-primary">{faq.question}</summary>
                   <p className="mt-3 text-sm leading-relaxed text-zinc-600">{faq.answer}</p>
@@ -278,7 +285,7 @@ export default function ProductDetailExperience({ product }: { product: ProductD
           </section>
         )}
 
-        {!!safety.length && (
+        {!!safety.length && !contentSections?.safety_information && (
           <section className="rounded-lg border border-amber-200 bg-amber-50 p-6">
             <h2 className="text-lg font-black text-amber-900">Safety Considerations</h2>
             <ul className="mt-3 space-y-2 text-sm leading-relaxed text-amber-800">

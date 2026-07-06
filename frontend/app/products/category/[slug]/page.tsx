@@ -1,26 +1,56 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { MessageCircle, Phone } from 'lucide-react'
+import { BookOpen, ClipboardCheck, Factory, MessageCircle, Phone } from 'lucide-react'
 import ProductCard from '@/components/products/ProductCard'
 import { getCategories, getCategoryBySlug, getProducts } from '@/lib/api'
-import { breadcrumbSchema, faqSchema, generatePageMetadata } from '@/lib/metadata'
+import { breadcrumbSchema, collectionPageSchema, faqSchema, generatePageMetadata } from '@/lib/metadata'
 import { SITE_CONFIG } from '@/lib/constants'
 import { whatsappHref } from '@/components/products/product-helpers'
+import type { CategoryContentSections, FaqItem, TitledSection } from '@/types'
 
 type CategoryPageProps = {
   params: Promise<{ slug: string }>
+}
+
+function paragraphs(value?: string): string[] {
+  return String(value || '')
+    .split(/\n{2,}|\n/)
+    .map(part => part.trim())
+    .filter(Boolean)
+}
+
+function titledItems(value: unknown): TitledSection[] {
+  if (!Array.isArray(value)) return []
+  return value
+    .filter((item): item is TitledSection => Boolean(item && typeof item === 'object'))
+    .map(item => ({ title: String(item.title || '').trim(), description: String(item.description || '').trim() }))
+    .filter(item => item.title && item.description)
+}
+
+function faqItems(value: unknown): FaqItem[] {
+  if (!Array.isArray(value)) return []
+  return value
+    .filter((item): item is FaqItem => Boolean(item && typeof item === 'object'))
+    .map(item => ({ question: String(item.question || '').trim(), answer: String(item.answer || '').trim() }))
+    .filter(item => item.question && item.answer)
 }
 
 export async function generateMetadata({ params }: CategoryPageProps): Promise<Metadata> {
   const { slug } = await params
   try {
     const category = await getCategoryBySlug(slug)
+    const sections: CategoryContentSections = category.content_sections || {}
     return generatePageMetadata({
       title: category.seo_title || `${category.name} Chemicals`,
       description: category.seo_description || category.description || `${category.name} chemicals supplied by ${SITE_CONFIG.name} across ${SITE_CONFIG.serviceArea}.`,
       path: `/products/category/${category.slug}`,
       image: category.image || undefined,
-      keywords: [category.name, `${category.name} ${SITE_CONFIG.address.country}`, `${category.name} supplier ${SITE_CONFIG.serviceArea}`],
+      keywords: [
+        category.name,
+        `${category.name} ${SITE_CONFIG.address.country}`,
+        `${category.name} supplier ${SITE_CONFIG.serviceArea}`,
+        ...(sections.seo_keywords || []),
+      ],
     })
   } catch {
     return generatePageMetadata({ title: 'Chemical Categories', description: SITE_CONFIG.description, path: '/products' })
@@ -44,7 +74,13 @@ export default async function CategoryCatalogPage({ params }: CategoryPageProps)
     getCategories(),
   ])
   const relatedCategories = categories.filter(item => item.slug !== category.slug).slice(0, 6)
-  const faqs = [
+  const sections: CategoryContentSections = category.content_sections || {}
+  const introduction = paragraphs(sections.introduction)
+  const industryApplications = titledItems(sections.industry_applications)
+  const buyingGuide = paragraphs(sections.buying_guide)
+  const selectionCriteria = titledItems(sections.selection_criteria)
+  const generatedFaqs = faqItems(sections.faq_section)
+  const faqs = generatedFaqs.length ? generatedFaqs : [
     {
       question: `Does ${SITE_CONFIG.name} supply ${category.name} in ${SITE_CONFIG.serviceArea}?`,
       answer: `Yes. ${SITE_CONFIG.name} supplies ${category.name} products for buyers in ${SITE_CONFIG.address.country} and wider ${SITE_CONFIG.serviceArea}, subject to stock, packaging, and delivery confirmation.`,
@@ -63,6 +99,12 @@ export default async function CategoryCatalogPage({ params }: CategoryPageProps)
         { name: category.name, href: `/products/category/${category.slug}` },
       ])) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema(faqs)) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionPageSchema(
+        `${category.name} — ${SITE_CONFIG.name}`,
+        category.seo_description || category.description || `${category.name} chemicals supplied across ${SITE_CONFIG.serviceArea}.`,
+        `/products/category/${category.slug}`,
+        products.results.map(product => ({ name: product.name, url: `${SITE_CONFIG.url}/products/${product.slug}` })),
+      )) }} />
 
       <section className="border-b border-zinc-200 bg-white">
         <div className="container-xl px-4 py-10">
@@ -74,10 +116,10 @@ export default async function CategoryCatalogPage({ params }: CategoryPageProps)
             <span className="text-primary">{category.name}</span>
           </div>
           <div className="max-w-4xl">
-            <p className="text-xs font-black uppercase tracking-[0.28em] text-accent">Category catalog</p>
+            <p className="text-xs font-black uppercase tracking-[0.28em] text-accent">Category guide & catalog</p>
             <h1 className="mt-3 text-4xl font-black leading-tight text-primary md:text-6xl">{category.name}</h1>
             <p className="mt-4 text-sm leading-7 text-zinc-600 md:text-base">
-              {category.description || `${category.name} products supplied by ${SITE_CONFIG.name} for procurement teams, distributors, laboratories, and industrial buyers.`}
+              {introduction[0] || category.description || `${category.name} products supplied by ${SITE_CONFIG.name} for procurement teams, distributors, laboratories, and industrial buyers.`}
             </p>
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">
               <a
@@ -122,6 +164,64 @@ export default async function CategoryCatalogPage({ params }: CategoryPageProps)
           </div>
         )}
 
+        {introduction.length > 1 && (
+          <section className="mt-12 rounded-lg border border-zinc-200 bg-white p-6 shadow-sm md:p-8">
+            <h2 className="text-2xl font-black text-primary">Understanding {category.name}</h2>
+            <div className="mt-4 max-w-4xl space-y-4 text-[15px] leading-8 text-zinc-600">
+              {introduction.slice(1).map((text, index) => <p key={index}>{text}</p>)}
+            </div>
+          </section>
+        )}
+
+        {!!industryApplications.length && (
+          <section className="mt-12 rounded-lg border border-zinc-200 bg-white p-6 shadow-sm md:p-8">
+            <div className="flex items-center gap-3">
+              <Factory className="text-accent" size={22} />
+              <h2 className="text-2xl font-black text-primary">Industry Applications of {category.name}</h2>
+            </div>
+            <div className="mt-6 grid gap-6 md:grid-cols-2">
+              {industryApplications.map(item => (
+                <article key={item.title} className="rounded-md border border-zinc-100 bg-zinc-50/60 p-5">
+                  <h3 className="text-base font-extrabold text-primary">{item.title}</h3>
+                  <p className="mt-2 text-sm leading-7 text-zinc-600">{item.description}</p>
+                </article>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {(!!buyingGuide.length || !!selectionCriteria.length) && (
+          <section className="mt-12 grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+            {!!buyingGuide.length && (
+              <div className="rounded-lg border border-zinc-200 bg-white p-6 shadow-sm md:p-8">
+                <div className="flex items-center gap-3">
+                  <BookOpen className="text-accent" size={22} />
+                  <h2 className="text-2xl font-black text-primary">{category.name} Buying Guide</h2>
+                </div>
+                <div className="mt-4 space-y-4 text-sm leading-7 text-zinc-600">
+                  {buyingGuide.map((text, index) => <p key={index}>{text}</p>)}
+                </div>
+              </div>
+            )}
+            {!!selectionCriteria.length && (
+              <div className="rounded-lg border border-zinc-200 bg-white p-6 shadow-sm md:p-8">
+                <div className="flex items-center gap-3">
+                  <ClipboardCheck className="text-accent" size={22} />
+                  <h2 className="text-2xl font-black text-primary">How to Choose</h2>
+                </div>
+                <div className="mt-4 space-y-5">
+                  {selectionCriteria.map(item => (
+                    <div key={item.title}>
+                      <h3 className="text-sm font-extrabold text-primary">{item.title}</h3>
+                      <p className="mt-1.5 text-sm leading-7 text-zinc-600">{item.description}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </section>
+        )}
+
         <section className="mt-12 grid gap-6 lg:grid-cols-[1fr_0.75fr]">
           <div className="rounded-lg border border-zinc-200 bg-white p-6 shadow-sm">
             <h2 className="text-xl font-black text-primary">{category.name} Supply Information</h2>
@@ -130,9 +230,9 @@ export default async function CategoryCatalogPage({ params }: CategoryPageProps)
             </p>
           </div>
           <div className="rounded-lg border border-zinc-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-black text-primary">FAQ</h2>
+            <h2 className="text-xl font-black text-primary">Frequently Asked Questions</h2>
             <div className="mt-4 space-y-3">
-              {faqs.map(faq => (
+              {faqs.slice(0, 10).map(faq => (
                 <details key={faq.question} className="rounded-md border border-zinc-200 p-4">
                   <summary className="cursor-pointer text-sm font-bold text-primary">{faq.question}</summary>
                   <p className="mt-3 text-sm leading-relaxed text-zinc-600">{faq.answer}</p>

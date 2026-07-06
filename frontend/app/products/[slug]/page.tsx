@@ -27,21 +27,27 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
   const { slug } = await params
   try {
     const product = await getProductBySlug(slug)
+    const schema = product.schema_data || {}
     const keywords = [
       product.name,
       product.category.name,
       `${product.name} supplier ${SITE_CONFIG.address.country}`,
       `${product.name} ${SITE_CONFIG.serviceArea}`,
-      ...((product.schema_data?.seo_keywords as string[] | undefined) || []),
+      ...((schema.seo_keywords as string[] | undefined) || []),
     ]
     return generatePageMetadata({
       title: product.seo_title || `${product.name} Supplier`,
       description: product.seo_description || product.short_description,
       path: `/products/${product.slug}`,
       image: product.image || undefined,
+      imageAlt: (schema.image_alt_text as string | undefined) || `${product.name} supplied by ${SITE_CONFIG.name}`,
       type: 'product',
       modifiedTime: product.updated_at,
       keywords,
+      ogTitle: (schema.og_title as string | undefined) || undefined,
+      ogDescription: (schema.og_description as string | undefined) || undefined,
+      twitterTitle: (schema.twitter_title as string | undefined) || undefined,
+      twitterDescription: (schema.twitter_description as string | undefined) || undefined,
     })
   } catch {
     return generatePageMetadata({

@@ -67,6 +67,18 @@ export interface AdminProductCategory {
   product_count: number
   seo_title: string
   seo_description: string
+  content_sections?: Record<string, unknown>
+}
+
+export interface BulkRegenerateStatus {
+  task_id: string
+  state: 'PENDING' | 'PROGRESS' | 'SUCCESS' | 'FAILURE' | string
+  current?: number
+  total?: number
+  product_name?: string
+  success?: number
+  failed?: number | { product: string; slug: string; error: string }[]
+  error?: string
 }
 
 export interface AdminProduct {

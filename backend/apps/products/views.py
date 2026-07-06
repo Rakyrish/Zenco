@@ -62,6 +62,19 @@ class CategoryViewSet(viewsets.ModelViewSet):
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
 
+    @action(detail=True, methods=['post'], url_path='generate-content',
+            permission_classes=[IsAdminUser])
+    def generate_content(self, request, slug=None):
+        """Generate long-form authority-page content for this category (sync)."""
+        from .content_engine import generate_category_content, apply_category_content
+        category = self.get_object()
+        data, error = generate_category_content(category)
+        if error:
+            return Response({'message': error}, status=status.HTTP_502_BAD_GATEWAY)
+        apply_category_content(category, data)
+        serializer = self.get_serializer(category)
+        return Response(serializer.data)
+
 
 class ProductViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [AllowAny]
@@ -108,10 +121,17 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
         return Response(serializer.data)
 
 
+class ProductAdminPagination(PageNumberPagination):
+    page_size = 10
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
+
 class ProductAdminViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.select_related('category').order_by('-updated_at')
     serializer_class = ProductAdminSerializer
     permission_classes = [IsAdminUser]
+    pagination_class = ProductAdminPagination
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['category__slug', 'status', 'availability', 'is_featured']
     search_fields = ['name', 'short_description', 'description', 'sku']
@@ -150,6 +170,64 @@ class ProductAdminViewSet(viewsets.ModelViewSet):
             return Response({'image': request.build_absolute_uri(media_url) if media_url.startswith('/') else media_url})
         except Exception as exc:
             return Response({'message': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['post'], url_path='regenerate-content')
+    def regenerate_content(self, request, pk=None):
+        """
+        Regenerate this product's content in place (synchronous).
+        URL slug, image, gallery, category, and SEO history are preserved —
+        only content and metadata are updated.
+        """
+        from .content_engine import regenerate_product
+        product = self.get_object()
+        extra_context = str(request.data.get('context') or '')
+        updated, error = regenerate_product(product, extra_context)
+        if error:
+            return Response({'message': error}, status=status.HTTP_502_BAD_GATEWAY)
+        serializer = self.get_serializer(updated)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['post'], url_path='bulk-regenerate')
+    def bulk_regenerate(self, request):
+        """
+        Queue bulk content regeneration.
+        Body: {"product_ids": ["..."]} for selected products, or {"all": true}
+        for the entire active catalog. Returns a Celery task id for polling.
+        """
+        from .tasks import bulk_regenerate_content_task
+        product_ids = request.data.get('product_ids') or None
+        regenerate_all = bool(request.data.get('all'))
+        if not product_ids and not regenerate_all:
+            return Response(
+                {'message': 'Provide product_ids or set "all": true.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        task = bulk_regenerate_content_task.delay(
+            product_ids=None if regenerate_all else [str(pid) for pid in product_ids],
+            triggered_by=getattr(request.user, 'username', 'admin'),
+        )
+        count = (
+            Product.objects.filter(is_active=True, is_deleted=False).count()
+            if regenerate_all else len(product_ids)
+        )
+        return Response({'status': 'queued', 'task_id': task.id, 'total': count})
+
+    @action(detail=False, methods=['get'], url_path='bulk-regenerate-status')
+    def bulk_regenerate_status(self, request):
+        """Poll bulk regeneration progress. Query param: task_id."""
+        from celery.result import AsyncResult
+        task_id = request.query_params.get('task_id', '')
+        if not task_id:
+            return Response({'message': 'task_id is required.'}, status=status.HTTP_400_BAD_REQUEST)
+        result = AsyncResult(task_id)
+        payload = {'task_id': task_id, 'state': result.state}
+        if result.state == 'PROGRESS':
+            payload.update(result.info or {})
+        elif result.state == 'SUCCESS':
+            payload.update(result.result or {})
+        elif result.state == 'FAILURE':
+            payload['error'] = str(result.result)
+        return Response(payload)
 
     @action(detail=False, methods=['get'], url_path='category/(?P<category_slug>[^/.]+)')
     def by_category(self, request, category_slug=None):

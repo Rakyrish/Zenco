@@ -6,11 +6,16 @@ interface MetadataOptions {
   description: string
   path?: string
   image?: string
+  imageAlt?: string
   type?: 'website' | 'article' | 'product'
   publishedTime?: string
   modifiedTime?: string
   keywords?: string[]
   noIndex?: boolean
+  ogTitle?: string
+  ogDescription?: string
+  twitterTitle?: string
+  twitterDescription?: string
 }
 
 export function generatePageMetadata({
@@ -18,11 +23,16 @@ export function generatePageMetadata({
   description,
   path = '',
   image,
+  imageAlt,
   type = 'website',
   publishedTime,
   modifiedTime,
   keywords = [],
   noIndex = false,
+  ogTitle,
+  ogDescription,
+  twitterTitle,
+  twitterDescription,
 }: MetadataOptions): Metadata {
   const url = `${SITE_CONFIG.url}${path}`
   const ogImage = image || `${SITE_CONFIG.url}/og-image.png`
@@ -52,8 +62,8 @@ export function generatePageMetadata({
           },
         },
     openGraph: {
-      title: `${title} | ${SITE_CONFIG.name}`,
-      description,
+      title: ogTitle || `${title} | ${SITE_CONFIG.name}`,
+      description: ogDescription || description,
       url,
       siteName: SITE_CONFIG.fullName,
       type: type === 'product' ? 'website' : type,
@@ -63,7 +73,7 @@ export function generatePageMetadata({
           url: ogImage,
           width: 1200,
           height: 630,
-          alt: `${title} - ${SITE_CONFIG.name}`,
+          alt: imageAlt || `${title} - ${SITE_CONFIG.name}`,
         },
       ],
       ...(publishedTime && { publishedTime }),
@@ -71,8 +81,8 @@ export function generatePageMetadata({
     },
     twitter: {
       card: 'summary_large_image',
-      title: `${title} | ${SITE_CONFIG.name}`,
-      description,
+      title: twitterTitle || ogTitle || `${title} | ${SITE_CONFIG.name}`,
+      description: twitterDescription || ogDescription || description,
       images: [ogImage],
       site: SITE_CONFIG.twitterHandle,
       creator: SITE_CONFIG.twitterHandle,

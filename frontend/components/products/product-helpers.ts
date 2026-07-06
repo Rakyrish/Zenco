@@ -47,6 +47,7 @@ export function whatsappHref(product?: Pick<ProductListItem, 'name' | 'slug' | '
   return number ? `https://wa.me/${number}?text=${encodeURIComponent(message)}` : `/contact${typeof product === 'object' && product?.name ? `?type=quote&product=${encodeURIComponent(product.name)}` : ''}`
 }
 
-export function productAlt(product: Pick<ProductListItem, 'name' | 'category_name'>) {
-  return `${product.name} industrial chemical supplied by ${SITE_CONFIG.name} in ${product.category_name}`
+export function productAlt(product: Pick<ProductListItem, 'name' | 'category_name'> & { schema_data?: Record<string, unknown> }) {
+  const custom = String(product.schema_data?.image_alt_text || '').trim()
+  return custom || `${product.name} industrial chemical supplied by ${SITE_CONFIG.name} in ${product.category_name}`
 }
